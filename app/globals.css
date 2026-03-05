@@ -1,0 +1,35 @@
+.sidebar-vh {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-20 { flex: 0 0 5%; }  /* header */
+.sidebar-70 { flex: 0 0 90%; overflow: auto; } /* middle, scrolls */
+.sidebar-10 { flex: 0 0 5%; }  /* footer */
+
+.message-sender {
+  text-align: end;
+  border: 1px;
+}
+
+.message-receiver {
+  text-align: start;
+}
+
+.message-sender-body {
+  background-color: white;
+  text-align: end;
+  border: 1px;
+  display: inline-block;
+  padding: 2px;
+  margin: 1px;
+}
+
+.message-receiver-body {
+  background-color: white;
+  text-align: start;
+  border: 1px;
+  display: inline-block;
+  padding: 2px;
+  margin: 1px;
+}
