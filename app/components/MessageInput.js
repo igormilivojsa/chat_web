@@ -34,8 +34,8 @@ export default function MessageInput({userId, chatId}) {
     }
 
     return (
-        <div className="d-flex w-100 mb-4">
-            <form onSubmit={handleSubmit(onSubmit)}>
+        <div>
+            <form className="d-flex w-100 mb-4" onSubmit={handleSubmit(onSubmit)}>
                 <input type="text" {...register("body")} className="flex-grow-1 border border-radius" />
                 <button type="submit">Send</button>
             </form>

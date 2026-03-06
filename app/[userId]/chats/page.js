@@ -18,10 +18,12 @@ export default function Chats() {
 
         const token = localStorage.getItem('token')
 
+
         if (! token) {
             router.push('/login')
             return;
         }
+
 
         const fetchData = async () => {
             try {
