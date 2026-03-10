@@ -24,7 +24,7 @@ export default function Register() {
 
             localStorage.setItem('token', result.accessToken)
 
-            router.push(`/${result.user.id}/chats`)
+            router.push(`/login `)
         } catch (error) {
             console.error(error)
             alert('Login failed. Check your credentials.')

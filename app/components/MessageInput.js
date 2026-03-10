@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { getSocket } from '@/app/library/socket'
 
 export default function MessageInput({userId, chatId}) {
     const {register, handleSubmit, reset} = useForm({
@@ -27,6 +28,9 @@ export default function MessageInput({userId, chatId}) {
             }
 
             reset({body: ''});
+
+            const socket = getSocket(token);
+            socket.emit("join_chat", chatId)
         } catch(error) {
             console.log(error)
             alert('Check credentials')
@@ -34,9 +38,9 @@ export default function MessageInput({userId, chatId}) {
     }
 
     return (
-        <div>
-            <form className="d-flex w-100 mb-4" onSubmit={handleSubmit(onSubmit)}>
-                <input type="text" {...register("body")} className="flex-grow-1 border border-radius" />
+        <div className="composer">
+            <form className="d-flex w-100 mb-0" onSubmit={handleSubmit(onSubmit)}>
+                <input type="text" {...register("body")} className="flex-grow-1" />
                 <button type="submit">Send</button>
             </form>
         </div>

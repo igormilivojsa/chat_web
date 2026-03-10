@@ -1,10 +1,10 @@
 'use client'
 
-
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import SidebarList from '@/app/components/SidebarList'
 import { ChatWindow } from '@/app/components/ChatWindow'
+import { getSocket } from '@/app/library/socket'
 
 export default function Chats() {
     const params = useParams();
@@ -58,6 +58,20 @@ export default function Chats() {
                 const chatsData = await chatsResponse.json()
                 setChats(chatsData)
 
+                const socket = getSocket(token);
+
+                socket.on('connect', () => {
+                    console.log('konekcija', socket.id);
+                })
+
+                socket.on('disconnect', () => {
+
+                })
+
+                return () => {
+                    socket.off('connect');
+                    socket.off('clients_count');
+                }
             } catch (error) {
                 console.error(error)
             } finally {
@@ -73,7 +87,7 @@ export default function Chats() {
 
     return (
         <div className="d-flex row mw-100 vh-100">
-            <SidebarList setSelectedChat={setSelectedChat} user={user} chats={chats}  />
+            <SidebarList setSelectedChat={setSelectedChat} user={user} chats={chats} setChats={setChats}  />
             <ChatWindow chat={selectedChat} />
         </div>
     )

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Message from '@/app/components/Message'
 import MessageInput from '@/app/components/MessageInput'
+import { getSocket } from '@/app/library/socket'
 
 export function ChatWindow({chat}) {
     const params = useParams();
@@ -11,6 +12,7 @@ export function ChatWindow({chat}) {
     const [messages, setMessages] = useState([]);
     const token = localStorage.getItem('token');
     const router = useRouter();
+    const bottomRef = useRef(null);
 
     useEffect(() => {
         if (!chat) {
@@ -18,7 +20,7 @@ export function ChatWindow({chat}) {
         }
 
         if (!token) {
-            router.push('login')
+            router.push('/login')
         }
 
         const fetchMessages = async () => {
@@ -44,19 +46,51 @@ export function ChatWindow({chat}) {
             }
         };
 
+        setMessages([]);
         fetchMessages();
     }, [chat, userId]);
+
+    useEffect(() => {
+        if (!chat) {
+            return;
+        }
+        const socket = getSocket(token);
+
+        socket.emit('join_chat', chat.id)
+
+        const handler = (payload) => {
+            if (payload.chatId === chat.id) {
+                setMessages(prev => {
+                    const updated = [...prev, payload];
+                    return updated;
+                });
+            }
+        };
+
+        socket.on('new_message', handler);
+        return () => {
+            socket.off("new_message", handler);
+            socket.emit("leave_chat", chat.id);
+        }
+    }, [chat?.id])
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "instant" })
+    }, [messages])
 
     if (!chat) return null;
 
     return (
-        <div className="col-10 bg-light d-flex flex-column" style={{ paddingLeft: '5%', paddingRight: '5%', height: '100vh' }}>
-            <div className="row flex-grow-1 overflow-y-auto">
+        <div className="col-10 bg-light d-flex flex-column chat-column" style={{ paddingLeft: '10%', paddingRight: '10%', height: '100vh' }}>
+            <div className="messages-container">
                 {messages.map(message => (
                     <Message key={message.id} user={message.user} authId={userId} message={message} />
                 ))}
+                <div ref={bottomRef}></div>
             </div>
-            <MessageInput userId={userId} chatId={chat.id} />
+            <div className="composer">
+                <MessageInput userId={userId} chatId={chat.id} />
+            </div>
         </div>
     )
 }

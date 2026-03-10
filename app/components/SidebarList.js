@@ -1,25 +1,14 @@
 import SidebarListItem from '@/app/components/SidebarListItem'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
 
-export default function SidebarList({setSelectedChat, user, chats}) {
+export default function SidebarList({setSelectedChat, user, chats, setChats}) {
     const {register, handleSubmit, reset} = useForm({
         defaultValues: {
             body: '',
         }
     })
-    const [isOpen, setIsOpen] = useState(false);
     const token = localStorage.getItem('token')
-    const router = useRouter();
-
-    function handleOpenModal() {
-        if (isOpen === false) {
-            setIsOpen(true)
-        } else {
-            setIsOpen(false)
-        }
-    }
 
     const onSubmit = async(data) => {
         try {
@@ -36,8 +25,13 @@ export default function SidebarList({setSelectedChat, user, chats}) {
                 throw new Error('Chat exists')
             }
 
+            const newChat = await response.json()
+
+            setChats(prev => [...prev, newChat])
+
             reset({body: ''});
-            alert('Chat created');
+
+            ('Chat created');
         } catch(error) {
             console.error(error)
             alert('Check credentials')
@@ -80,7 +74,11 @@ export default function SidebarList({setSelectedChat, user, chats}) {
                         className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                         aria-expanded="true"
                     >
-                        {user.username}
+                        {
+                            !user ?
+                            ""
+                            : user.username
+                        }
                     </button>
                     <ul className="dropdown-menu">
                         <li>
