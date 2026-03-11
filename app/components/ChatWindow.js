@@ -13,6 +13,7 @@ export function ChatWindow({chat}) {
     const token = localStorage.getItem('token');
     const router = useRouter();
     const bottomRef = useRef(null);
+    const [willParticipate, setWillParticipate] = useState();
 
     useEffect(() => {
         if (!chat) {
@@ -41,6 +42,16 @@ export function ChatWindow({chat}) {
 
                 const data = await response.json();
                 setMessages(data);
+
+                const isCreator = chat.creator === userId
+                const userHasMessages = data.some(message => message.user.id == userId)
+
+                setWillParticipate(isCreator || userHasMessages)
+                /*
+                * Kada se napravi cet treba preko bekenda da se obavjesti drugi korisnik sa kojim je cet napravljen
+                * kada na frontu korisnik odluci da li zeli cet ili ne to nece mjenjati nista u bazi nego samo na frontu
+                * cet se napravi preko socketa se posalje poruka ili alert korisniku koji se uloguje i sa kojim je cet napravljen da ga obavjesti
+                * */
             } catch (error) {
                 console.error('Error fetching messages:', error);
             }
@@ -60,6 +71,7 @@ export function ChatWindow({chat}) {
 
         const handler = (payload) => {
             if (payload.chatId === chat.id) {
+                setWillParticipate(true)
                 setMessages(prev => {
                     const updated = [...prev, payload];
                     return updated;
@@ -75,8 +87,31 @@ export function ChatWindow({chat}) {
     }, [chat?.id])
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "instant" })
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])
+
+    async function handleDelete() {
+        try {
+            const response = await fetch(
+                `http://localhost/api/user/${userId}/chats/${chat.id}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Delete failed');
+            }
+
+            router.push(`/${userId}/chats`);
+        } catch (error) {
+            console.error('Error deleting chat:', error);
+        }
+    }
 
     if (!chat) return null;
 
@@ -88,8 +123,16 @@ export function ChatWindow({chat}) {
                 ))}
                 <div ref={bottomRef}></div>
             </div>
-            <div className="composer">
-                <MessageInput userId={userId} chatId={chat.id} />
+            <div className="row">
+                {
+                    willParticipate ?
+                    <div></div>
+                    :
+                    <button onClick={handleDelete}>User wants to chat, writte message if you want to continue or delete this chat</button>
+                }
+                <div className="composer">
+                    <MessageInput userId={userId} chatId={chat.id} />
+                </div>
             </div>
         </div>
     )

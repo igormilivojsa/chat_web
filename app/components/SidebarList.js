@@ -1,5 +1,4 @@
 import SidebarListItem from '@/app/components/SidebarListItem'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 export default function SidebarList({setSelectedChat, user, chats, setChats}) {
@@ -31,7 +30,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats}) {
 
             reset({body: ''});
 
-            ('Chat created');
+            alert('Chat created');
         } catch(error) {
             console.error(error)
             alert('Check credentials')
