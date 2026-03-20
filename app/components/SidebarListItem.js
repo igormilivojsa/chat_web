@@ -1,21 +1,21 @@
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
 import { log } from 'next/dist/server/typescript/utils'
 
 
-export default function SidebarListItem({onClick, chat}) {
+export default function SidebarListItem({onClick, chat, isSelected, onlineUsers}) {
     const params = useParams();
     const userId = params.userId;
     const receiver = chat.participant.find(participant => participant.id != userId);
+    const isOnline = onlineUsers.has(receiver.id.toString());
 
     return (
         <div className="card border-1 m-1 shadow-lg" onClick={onClick}>
-            <div key={ chat.id }>
-                <div className="card-header bg-light">
-                    { receiver ? receiver.username : 'You' }
+            <div className={isSelected ? "bg-secondary-subtle" : ""} key={ chat.id }>
+                <div className="card-body bg-light">
+                    { receiver ? receiver.username : 'You' } { isOnline ? 'online' : 'offline' }
                 </div>
                 <div className="card-body">
-                    Latest message
+                    {chat.latestMessage.length < 20 ? chat.latestMessage : 'To long'}
                 </div>
             </div>
         </div>

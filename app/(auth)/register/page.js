@@ -22,9 +22,9 @@ export default function Register() {
 
             const result = await response.json();
 
-            localStorage.setItem('token', result.accessToken)
+            localStorage.setItem('token', result.token)
 
-            router.push(`/login `)
+            router.push(`/${result.user.id}/chats`)
         } catch (error) {
             console.error(error)
             alert('Login failed. Check your credentials.')

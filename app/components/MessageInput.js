@@ -2,15 +2,36 @@
 
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
-import { getSocket } from '@/app/library/socket'
+import { useEffect, useState } from 'react'
+import { getSocket } from '@/app/socket'
 
 export default function MessageInput({userId, chatId}) {
-    const {register, handleSubmit, reset} = useForm({
+    const {register, handleSubmit, reset, watch} = useForm({
         defaultValues: {
             body: '',
         }
     })
-    const token = localStorage.getItem('token')
+    const [ token, setToken] = useState(null);
+
+    useEffect(() => {
+        setToken(localStorage.getItem('token'));
+    }, [])
+
+    const bodyValue = watch('body');
+
+    const socket = token ? getSocket(token) : null;
+
+    useEffect(() => {
+        if (!socket) return;
+
+        if (bodyValue.trim().length > 0) {
+            socket.emit('typing', { userId, chatId });
+        } else {
+            socket.emit('stop_typing', { userId, chatId });
+        }
+    }, [bodyValue, socket, userId, chatId]);
+
+
     const router = useRouter()
     const onSubmit = async(data) => {
         try {
@@ -29,10 +50,8 @@ export default function MessageInput({userId, chatId}) {
 
             reset({body: ''});
 
-            const socket = getSocket(token);
-            socket.emit("join_chat", chatId)
         } catch(error) {
-            console.log(error)
+
             alert('Check credentials')
         }
     }

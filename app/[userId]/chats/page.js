@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import SidebarList from '@/app/components/SidebarList'
 import { ChatWindow } from '@/app/components/ChatWindow'
-import { getSocket } from '@/app/library/socket'
+import { getSocket } from '@/app/socket'
 
 export default function Chats() {
     const params = useParams();
@@ -13,11 +13,10 @@ export default function Chats() {
     const [chats, setChats] = useState([])
     const [loader, setLoader] = useState(true)
     const [selectedChat, setSelectedChat] = useState(null);
+    const [ onlineUsers, setOnlineUsers] = useState(new Set());
 
     useEffect(() => {
-
         const token = localStorage.getItem('token')
-
 
         if (! token) {
             router.push('/login')
@@ -40,6 +39,7 @@ export default function Chats() {
                 }
 
                 if (! userResponse.ok) {
+                    router.push('/login')
                     throw new Error('Unauthorised')
                 }
 
@@ -57,21 +57,6 @@ export default function Chats() {
 
                 const chatsData = await chatsResponse.json()
                 setChats(chatsData)
-
-                const socket = getSocket(token);
-
-                socket.on('connect', () => {
-                    console.log('konekcija', socket.id);
-                })
-
-                socket.on('disconnect', () => {
-
-                })
-
-                return () => {
-                    socket.off('connect');
-                    socket.off('clients_count');
-                }
             } catch (error) {
                 console.error(error)
             } finally {
@@ -79,6 +64,72 @@ export default function Chats() {
             }
         }
         fetchData();
+
+        const socket = getSocket(token);
+
+
+        const newChatHandler = async (data) => {
+            const response = await fetch(`http://localhost/api/user/${params.userId}/chats/${data.chatId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const fullChat = await response.json();
+            setChats(prev => [...prev, fullChat]);
+        }
+
+        const chatDeleteHandler = (data) => {
+            setChats(prev => prev.filter(c => c.id !== data.chatId));
+
+            setSelectedChat(prev => {
+                if (prev?.id === data.chatId) return null;
+                return prev;
+            });
+        };
+
+        const handleOnlineUsers = (data) => {
+            setOnlineUsers(prev => {
+                const updated = new Set(prev).add(data.userId)
+                return updated;
+            })
+        }
+
+        const handleOfflineUsers = (data) => {
+            setOnlineUsers(prev => {
+                const updated = new Set(prev);
+                updated.delete(data.userId);
+                return updated;
+            })
+        }
+
+        const handleCurrentOnlineUsers = (data) => {
+            setOnlineUsers(new Set(data.userIds))
+        }
+
+        const joinUser = () => socket.emit('join_user', params.userId)
+
+        if (socket.connected) {
+            joinUser()
+        } else {
+            socket.on('connect', joinUser)
+        }
+
+        socket.on('new_chat', newChatHandler);
+        socket.on('chat_delete', chatDeleteHandler);
+
+        socket.on('online_user', handleOnlineUsers)
+        socket.on('current_online_users', handleCurrentOnlineUsers)
+        socket.on('offline_user', handleOfflineUsers)
+
+        return () => {
+            socket.off('connect', joinUser);
+            socket.off('new_chat', newChatHandler);
+            socket.off('chat_delete', chatDeleteHandler);
+            socket.off('online_user', handleOnlineUsers);
+            socket.off('offline_user', handleOfflineUsers );
+            socket.off('current_online_users', handleCurrentOnlineUsers)
+        };
     }, [params.userId, router])
 
     if (loader) {
@@ -87,8 +138,8 @@ export default function Chats() {
 
     return (
         <div className="d-flex row mw-100 vh-100">
-            <SidebarList setSelectedChat={setSelectedChat} user={user} chats={chats} setChats={setChats}  />
-            <ChatWindow chat={selectedChat} />
+            <SidebarList setSelectedChat={setSelectedChat} onlineUsers={onlineUsers} selectedChat={selectedChat} user={user} chats={chats} setChats={setChats}  />
+            <ChatWindow setSelectedChat={setSelectedChat} setChats={setChats} chat={selectedChat} />
         </div>
     )
 }

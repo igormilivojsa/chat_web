@@ -30,6 +30,7 @@ export default function Login() {
             alert('Check credentials')
         }
     }
+
     return (
         <div className="container d-flex justify-content-center align-items-center vh-100">
             <div className="w-50 card text-center">
@@ -47,7 +48,7 @@ export default function Login() {
                         </label>
                         <input {...register("password")} type="password" className="form-control m-3 w-50 mx-auto"/>
 
-                        <button className="m-3 w-50 mx-auto" type="submit">
+                        <button className="m-3 w-50 mx-auto" type="submit" onKeyDown={e => handleSubmit()}>
                             Submit
                         </button>
                     </form>

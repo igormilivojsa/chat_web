@@ -1,13 +1,24 @@
 import SidebarListItem from '@/app/components/SidebarListItem'
 import { useForm } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { getSocket, resetSocket } from '@/app/socket'
 
-export default function SidebarList({setSelectedChat, user, chats, setChats}) {
+export default function SidebarList({setSelectedChat, user, chats, setChats, selectedChat, onlineUsers}) {
     const {register, handleSubmit, reset} = useForm({
         defaultValues: {
             body: '',
         }
     })
-    const token = localStorage.getItem('token')
+    const [ token, setToken] = useState(null);
+    const router = useRouter();
+    const isOnline = user && onlineUsers.has(user.id.toString());
+
+    useEffect(() => {
+        setToken(localStorage.getItem('token'));
+
+    }, [])
 
     const onSubmit = async(data) => {
         try {
@@ -37,6 +48,22 @@ export default function SidebarList({setSelectedChat, user, chats, setChats}) {
         }
     }
 
+    function handleLogout() {
+        const token = localStorage.getItem('token');
+        const socket = getSocket(token)
+
+        socket.disconnect();
+        resetSocket();
+
+        localStorage.removeItem('token');
+
+        setToken(null);
+        setChats([]);
+        setSelectedChat(null);
+
+        router.push('/login')
+    }
+
     return (
         <div className="col-2 bg-light border-end sidebar-vh">
             <div className="sidebar-20 p-2">
@@ -63,12 +90,12 @@ export default function SidebarList({setSelectedChat, user, chats, setChats}) {
                     </div>
                 </div>
                 { chats.map(chat => (
-                    <SidebarListItem onClick={ () => setSelectedChat(chat) } key={ chat.id } chat={ chat }/>
+                    <SidebarListItem onClick={ () => setSelectedChat(chat) } onlineUsers={onlineUsers} isSelected={selectedChat?.id === chat.id} key={ chat.id } chat={ chat }/>
                 )) }
             </div>
 
             <div className="sidebar-10 p-2 border-top">
-            <div className="dropdown">
+                <div className="dropdown">
                     <button
                         className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                         aria-expanded="true"
@@ -78,13 +105,14 @@ export default function SidebarList({setSelectedChat, user, chats, setChats}) {
                             ""
                             : user.username
                         }
+                        {isOnline ? <span className="badge bg-success ms-2">Online</span> : <span className="badge bg-danger ms-2">Offline</span>}
                     </button>
                     <ul className="dropdown-menu">
                         <li>
                             <a className="dropdown-item" href="#">Settings</a>
                         </li>
                         <li>
-                            <a className="dropdown-item" href="#">Logout</a>
+                            <Link className="dropdown-item" onClick={handleLogout} href="/">Logout</Link>
                         </li>
                     </ul>
                 </div>

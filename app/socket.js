@@ -3,11 +3,9 @@ import { io } from 'socket.io-client'
 let socket;
 
 export const getSocket = (token) => {
-    if (!socket) {
+    if (!socket || socket.disconnected) {
         socket = io('http://localhost:3001', {
-            auth: {
-                token
-            }
+            auth: { token }
         });
 
         socket.on("connect", () => {
@@ -20,4 +18,8 @@ export const getSocket = (token) => {
     }
 
     return socket;
+}
+
+export const resetSocket = () => {
+    socket = null;
 }
