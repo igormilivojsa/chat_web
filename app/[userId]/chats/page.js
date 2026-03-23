@@ -139,7 +139,7 @@ export default function Chats() {
     return (
         <div className="d-flex row mw-100 vh-100">
             <SidebarList setSelectedChat={setSelectedChat} onlineUsers={onlineUsers} selectedChat={selectedChat} user={user} chats={chats} setChats={setChats}  />
-            <ChatWindow setSelectedChat={setSelectedChat} setChats={setChats} chat={selectedChat} />
+            <ChatWindow setSelectedChat={setSelectedChat} setChats={setChats} chat={selectedChat} selectedChat={selectedChat}/>
         </div>
     )
 }

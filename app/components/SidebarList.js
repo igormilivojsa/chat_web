@@ -109,7 +109,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
                     </button>
                     <ul className="dropdown-menu">
                         <li>
-                            <a className="dropdown-item" href="#">Settings</a>
+                            <Link className="dropdown-item" href={`/${user.id}/profile`}>Settings</Link>
                         </li>
                         <li>
                             <Link className="dropdown-item" onClick={handleLogout} href="/">Logout</Link>

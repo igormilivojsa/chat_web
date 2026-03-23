@@ -7,7 +7,7 @@ import MessageInput from '@/app/components/MessageInput'
 import { getSocket } from '@/app/socket'
 import ErrorMessage from '@/app/components/ErrorMessage'
 
-export function ChatWindow({setChats, chat, setSelectedChat}) {
+export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const params = useParams();
     const userId = params.userId;
     const [ messages, setMessages] = useState([]);
@@ -17,7 +17,8 @@ export function ChatWindow({setChats, chat, setSelectedChat}) {
     const [ willParticipate, setWillParticipate] = useState(null);
     const [ error, setError] = useState('');
     const [ isTyping, setIsTyping] = useState(false);
-
+    const [ isRead, setIsRead] = useState(false);
+    //Fetch messages
     useEffect(() => {
         if (!chat) {
             return;
@@ -50,6 +51,32 @@ export function ChatWindow({setChats, chat, setSelectedChat}) {
                 const data = await response.json();
                 setMessages(data);
 
+                const myMessages = data.filter(message => Number(message.user.id) === Number(userId));
+                const myLatestMessage = myMessages[myMessages.length - 1];
+                setIsRead(myLatestMessage?.isRead ?? false);
+
+                const unreadMessages = data.filter(message => !message.isRead && Number(message.user.id) !== Number(userId));
+                const latestUnreadMessage = unreadMessages[unreadMessages.length - 1];
+
+                if (!latestUnreadMessage) {
+                    return;
+                }
+
+                try {
+                    await fetch(
+                        `http://localhost/api/user/${userId}/chats/${chat.id}/messages/${latestUnreadMessage.id}/read`,
+                        {
+                            method: 'PATCH',
+                            headers: {
+                                Authorization: `Bearer ${storedToken}`,
+                                'Content-Type': 'application/json',
+                            },
+                        }
+                    );
+                } catch (err) {
+                    console.error('Read failed', err);
+                }
+
                 const isCreator = Number(chat.creator) === Number(userId);
                 const userHasMessages = data.some(message => message.user.id == userId)
                 setWillParticipate(isCreator || userHasMessages)
@@ -59,21 +86,25 @@ export function ChatWindow({setChats, chat, setSelectedChat}) {
         };
 
         setMessages([]);
+        setIsRead(false);
         fetchMessages();
     }, [chat, userId]);
 
+    //Join chat
     useEffect(() => {
         if (!chat) {
             return;
         }
+
         const socket = getSocket(token);
 
         socket.emit('join_chat', chat.id)
 
-        const handler = (payload) => {
+        const handleNewMessage = (payload) => {
             if (payload.chat.id === chat.id) {
                 if (Number(payload.user.id) === Number(userId)) {
                     setWillParticipate(true)
+                    setIsRead(false);
                 }
 
                 setMessages(prev => {
@@ -83,17 +114,38 @@ export function ChatWindow({setChats, chat, setSelectedChat}) {
             }
         };
 
-        socket.on('new_message', handler);
+        const handleReadMessage = ({userId: readerId, messageId}) => {
+            if (Number(readerId) === Number(userId)) return;
+
+            setIsRead(true);
+
+            setMessages(prev => {
+                const updated = prev.map(message => {
+                    if (message.id === messageId) {
+                        return {...message, isRead: true}
+                    }
+                    return message;
+                })
+                return updated;
+            })
+        }
+
+        socket.on('message_read', handleReadMessage);
+        socket.on('new_message', handleNewMessage);
+
         return () => {
-            socket.off("new_message", handler);
+            socket.off('message_read', handleReadMessage);
+            socket.off("new_message", handleNewMessage);
             socket.emit("leave_chat", chat.id);
         }
     }, [chat?.id])
 
+    //Scroll to bottom
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])
 
+    //Handle typing
     useEffect(() => {
         if (!chat) return;
 
@@ -148,16 +200,27 @@ export function ChatWindow({setChats, chat, setSelectedChat}) {
         <div className="col-10 bg-light d-flex flex-column chat-column" style={{ paddingLeft: '10%', paddingRight: '10%', height: '100vh' }}>
             {error && <ErrorMessage error={error} /> }
             <div className="messages-container">
-                {messages.map(message => (
-                    <Message key={message.id} setMessage={setMessages} user={message.user} authId={userId} message={message} />
-                ))}
+                {messages.map((message, index) => {
+                    const isLastMessage =
+                        Number(message.user.id) === Number(userId) &&
+                        messages.findLastIndex(m => Number(m.user.id) === Number(userId)) === index;
+                    console.log(isLastMessage)
+                    return (
+                        <div key={message.id}>
+                            <Message setMessage={setMessages} user={message.user} authId={userId} message={message} />
+                            {isLastMessage && isRead && (
+                                <div className="text-end text-muted small">Seen</div>
+                            )}
+                        </div>
+                    );
+                })}
                 <div ref={bottomRef}></div>
             </div>
             <div className="row">
                 { willParticipate === null ? null : (
                         willParticipate
                             ? <div></div>
-                            : <button onClick={handleDelete}>User wants to chat, writte message if you want to continue or delete this chat</button>
+                            : <button onClick={handleDelete}>User wants to chat, write message if you want to continue or delete this chat</button>
                     )
                 }
                 {

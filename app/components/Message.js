@@ -3,7 +3,7 @@ import { getSocket } from '@/app/socket'
 import ErrorMessage from '@/app/components/ErrorMessage'
 
 export default function Message({user, authId, message, setMessage}) {
-    const isSender = user.id == authId;
+    const isSender = Number(user.id) === Number(authId);
     const [ token, setToken] = useState(null);
     const [error, setError] = useState('')
 
@@ -22,7 +22,7 @@ export default function Message({user, authId, message, setMessage}) {
         return () => {
             socket.off('message_delete', messageDeleteHandler)
         }
-    }, [setMessage])
+    }, [setMessage, token])
 
     async function handleDeleteMessage() {
         const chatId = message?.chatId ?? message.chat.id;
@@ -50,26 +50,25 @@ export default function Message({user, authId, message, setMessage}) {
         setTimeout(() => setError(''), 5000)
     }
 
-    function formatTime(createdAt) {
+    function formatTime(message) {
         const messageTime = new Date(message.createdAt);
         const now = new Date();
         const difference = now - messageTime;
         const differenceInMinutes = Math.floor(difference/60000);
-        const differenceInHours = Math.floor(differenceInMinutes/60);
+
+        if (!differenceInMinutes) {
+            return 'Just now'
+        }
 
         if (differenceInMinutes < 60) {
-            if (differenceInMinutes.toString() === '1') {
-                return `${differenceInMinutes.toString()} minute ago`
-            } else {
-                return `${differenceInMinutes.toString()} minutes ago`
-            }
-        } else {
-            if (differenceInHours.toString() === '1') {
-                return `${differenceInHours.toString()} hour ago`
-            } else {
-                return `${differenceInHours.toString()} hours ago`
-            }
+            return `${ differenceInMinutes } minutes ago`
         }
+
+        if (differenceInMinutes < 1440) {
+            return `${ Math.floor(differenceInMinutes / 60) } hours ago`
+        }
+
+        return `${Math.floor(differenceInMinutes / 1440)} days ago`;
     }
 
     return (
@@ -79,7 +78,7 @@ export default function Message({user, authId, message, setMessage}) {
                 <div className={ isSender ? "message-sender-body" : "message-receiver-body" }>
                     { ! isSender && <div className="message-meta">{ message.user.username }</div> }
                     <div className="message-text">{ message.body }</div>
-                    <div>{formatTime(message.createdAt)}</div>
+                    <div>{formatTime(message)}</div>
                 </div>
             </div>
         </div>
