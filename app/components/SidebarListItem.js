@@ -1,5 +1,4 @@
 import { useParams } from 'next/navigation'
-import { log } from 'next/dist/server/typescript/utils'
 
 
 export default function SidebarListItem({onClick, chat, isSelected, onlineUsers}) {
@@ -14,11 +13,17 @@ export default function SidebarListItem({onClick, chat, isSelected, onlineUsers}
         return message.slice(0, 20) + '...';
     }
 
+    function shortenUsername(username) {
+        if (!username) return '';
+        if (username.length < 20) return username;
+        return username.slice(0, 20) + '...';
+    }
+
     return (
         <div className="card border-1 m-1 shadow-lg" onClick={onClick}>
             <div className={isSelected ? "bg-secondary-subtle" : ""} key={ chat.id }>
                 <div className="card-body bg-light">
-                    { receiver ? receiver.username : 'You' } { isOnline ? <span className="badge rounded bg-success">Online</span> : <span className="badge rounded bg-danger">Offline</span> }
+                    { receiver ? shortenUsername(receiver.username) : 'You' } { isOnline ? <span className="badge rounded bg-success">Online</span> : <span className="badge rounded bg-danger">Offline</span> }
                 </div>
                 <div className="card-body">
                     { shortenMessage(chat?.latestMessage) }

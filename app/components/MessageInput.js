@@ -1,9 +1,10 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getSocket } from '@/app/socket'
+import { toast } from 'react-toastify'
+import { getTostify } from '@/app/tostify'
 
 export default function MessageInput({userId, chatId}) {
     const {register, handleSubmit, reset, watch} = useForm({
@@ -12,6 +13,7 @@ export default function MessageInput({userId, chatId}) {
         }
     })
     const [ token, setToken] = useState(null);
+    const [loader, setLoader] = useState(false);
 
     useEffect(() => {
         setToken(localStorage.getItem('token'));
@@ -31,11 +33,10 @@ export default function MessageInput({userId, chatId}) {
         }
     }, [bodyValue, socket, userId, chatId]);
 
-
-    const router = useRouter()
     const onSubmit = async(data) => {
+        setLoader(true);
         try {
-            const response = await fetch(`http://localhost/api/user/${userId}/chats/${chatId}/messages`, {
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chatId}/messages`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -45,21 +46,30 @@ export default function MessageInput({userId, chatId}) {
             })
 
             if (!response.ok) {
-                throw new Error('Message failed')
+                setLoader(false);
+                getTostify('error', 'Failed to send message, check credentials')
+                return;
             }
 
+            setLoader(false);
+            getTostify('success', 'Message sent successfully')
+
             reset({body: ''});
-
         } catch(error) {
-
-            alert('Check credentials')
+            getTostify('error', error.message)
+        } finally {
+            setLoader(false);
         }
     }
 
-    return (
+    if (loader) {
+        return <div>Loading...</div>
+    }
+
+   return (
         <div className="composer">
             <form className="d-flex w-100 mb-0" onSubmit={handleSubmit(onSubmit)}>
-                <input type="text" {...register("body")} className="flex-grow-1" />
+                <input type="text" {...register("body")} required className="flex-grow-1" />
                 <button type="submit">Send</button>
             </form>
         </div>

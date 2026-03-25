@@ -1,14 +1,19 @@
 'use client'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { toast } from 'react-toastify'
+import { getTostify } from '@/app/tostify'
+import { useState } from 'react'
 
 export default function Register() {
     const {register, handleSubmit} = useForm();
     const router = useRouter();
+    const [loader, setLoader] = useState(false);
 
     const onSubmit = async(data) => {
         try {
-            const response = await fetch('http://localhost/api/register', {
+            setLoader(true);
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/register', {
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/json',
@@ -17,18 +22,28 @@ export default function Register() {
             })
 
             if (!response.ok) {
-                throw new Error('Register failed')
+                setLoader(false);
+                getTostify('error', 'Registration failed, check credentials')
+                return;
             }
 
             const result = await response.json();
 
             localStorage.setItem('token', result.token)
 
+            setLoader(false);
+            getTostify('success', 'Registration successful');
+
             router.push(`/${result.user.id}/chats`)
         } catch (error) {
-            console.error(error)
-            alert('Login failed. Check your credentials.')
+            console.log(error.message, 'error')
+        } finally {
+            setLoader(false);
         }
+    }
+
+    if (loader) {
+        return <div>Loading...</div>
     }
     return (
         <div className="container d-flex justify-content-center align-items-center vh-100">

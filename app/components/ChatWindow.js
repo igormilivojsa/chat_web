@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Message from '@/app/components/Message'
 import MessageInput from '@/app/components/MessageInput'
 import { getSocket } from '@/app/socket'
-import ErrorMessage from '@/app/components/ErrorMessage'
+import { getTostify } from '@/app/tostify'
 
 export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const params = useParams();
@@ -15,12 +15,15 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const router = useRouter();
     const bottomRef = useRef(null);
     const [ willParticipate, setWillParticipate] = useState(null);
-    const [ error, setError] = useState('');
     const [ isTyping, setIsTyping] = useState(false);
     const [ isRead, setIsRead] = useState(false);
+
     //Fetch messages
     useEffect(() => {
         if (!chat) {
+            router.push(
+                `/${userId}/chats`
+            )
             return;
         }
 
@@ -28,6 +31,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         setToken(storedToken);
 
         if (!storedToken) {
+            getTostify('error', 'Unauthenticated')
             router.push('/login');
             return;
         }
@@ -35,7 +39,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         const fetchMessages = async () => {
             try {
                 const response = await fetch(
-                    `http://localhost/api/user/${userId}/chats/${chat.id}/messages`,
+                    process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chat.id}/messages`,
                     {
                         headers: {
                             Authorization: `Bearer ${storedToken}`,
@@ -45,7 +49,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 );
 
                 if (!response.ok) {
-                    throw new Error('Unauthenticated or fetch failed');
+                    getTostify('error', 'Failed to fetch messages, check credentials')
                 }
 
                 const data = await response.json();
@@ -55,16 +59,9 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 const myLatestMessage = myMessages[myMessages.length - 1];
                 setIsRead(myLatestMessage?.isRead ?? false);
 
-                const unreadMessages = data.filter(message => !message.isRead && Number(message.user.id) !== Number(userId));
-                const latestUnreadMessage = unreadMessages[unreadMessages.length - 1];
-
-                if (!latestUnreadMessage) {
-                    return;
-                }
-
                 try {
                     await fetch(
-                        `http://localhost/api/user/${userId}/chats/${chat.id}/messages/${latestUnreadMessage.id}/read`,
+                        process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chat.id}/messages/read`,
                         {
                             method: 'PATCH',
                             headers: {
@@ -73,19 +70,20 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                             },
                         }
                     );
-                } catch (err) {
-                    console.error('Read failed', err);
+                } catch (error) {
+                    getTostify('error', error.message)
                 }
 
                 const isCreator = Number(chat.creator) === Number(userId);
                 const userHasMessages = data.some(message => message.user.id == userId)
                 setWillParticipate(isCreator || userHasMessages)
             } catch (error) {
-                setError(error?.message || 'Messages fetch failed in ChatWindow')
+                getTostify('error', error.message)
             }
         };
 
         setMessages([]);
+        setWillParticipate(null);
         setIsRead(false);
         fetchMessages();
     }, [chat, userId]);
@@ -114,20 +112,18 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             }
         };
 
-        const handleReadMessage = ({userId: readerId, messageId}) => {
+        const handleReadMessage = ({ userId: readerId }) => {
             if (Number(readerId) === Number(userId)) return;
 
             setIsRead(true);
 
-            setMessages(prev => {
-                const updated = prev.map(message => {
-                    if (message.id === messageId) {
-                        return {...message, isRead: true}
-                    }
-                    return message;
-                })
-                return updated;
-            })
+            setMessages(prev =>
+                prev.map(message =>
+                    Number(message.user.id) === Number(userId)
+                    ? { ...message, isRead: true }
+                    : message
+                )
+            );
         }
 
         socket.on('message_read', handleReadMessage);
@@ -147,7 +143,9 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     //Handle typing
     useEffect(() => {
-        if (!chat) return;
+        if (!chat) {
+            return;
+        }
 
         const socket = getSocket(token);
 
@@ -175,7 +173,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     async function handleDelete() {
         try {
             const response = await fetch(
-                `http://localhost/api/user/${userId}/chats/${chat.id}`,
+                process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chat.id}`,
                 {
                     method: 'DELETE',
                     headers: {
@@ -186,11 +184,12 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             );
 
             if (!response.ok) {
-                throw new Error('Delete failed');
+                getTostify('error', 'Failed to delete chat, check credentials')
             }
 
+            getTostify('success', 'Chat deleted successfully')
         } catch (error) {
-            setError(error?.message || 'Message delete failed in ChatWindow')
+            getTostify('error', error.message)
         }
     }
 
@@ -198,13 +197,11 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     return (
         <div className="col-10 bg-light d-flex flex-column chat-column" style={{ paddingLeft: '10%', paddingRight: '10%', height: '100vh' }}>
-            {error && <ErrorMessage error={error} /> }
             <div className="messages-container">
                 {messages.map((message, index) => {
                     const isLastMessage =
                         Number(message.user.id) === Number(userId) &&
                         messages.findLastIndex(m => Number(m.user.id) === Number(userId)) === index;
-                    console.log(isLastMessage)
                     return (
                         <div key={message.id}>
                             <Message setMessage={setMessages} user={message.user} authId={userId} message={message} />

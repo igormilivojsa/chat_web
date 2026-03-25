@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import SidebarList from '@/app/components/SidebarList'
 import { ChatWindow } from '@/app/components/ChatWindow'
 import { getSocket } from '@/app/socket'
+import { getTostify } from '@/app/tostify'
 
 export default function Chats() {
     const params = useParams();
@@ -19,6 +20,7 @@ export default function Chats() {
         const token = localStorage.getItem('token')
 
         if (! token) {
+            getTostify('error', 'Unauthenticated')
             router.push('/login')
             return;
         }
@@ -26,7 +28,7 @@ export default function Chats() {
 
         const fetchData = async () => {
             try {
-                const userResponse = await fetch(`http://localhost/api/user/${ params.userId }`, {
+                const userResponse = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${ params.userId }`, {
                     headers: {
                         Authorization: `Bearer ${ token }`,
                         'Content-Type': 'application/json'
@@ -34,31 +36,36 @@ export default function Chats() {
                 });
 
                 if (userResponse.status === 401) {
+                    getTostify('error', 'Unauthenticated')
                     router.push('/login');
                     return
                 }
 
                 if (! userResponse.ok) {
+                    getTostify('error', 'Failed to fetch user data, check credentials')
                     router.push('/login')
-                    throw new Error('Unauthorised')
                 }
 
                 const userData = await userResponse.json();
                 setUser(userData);
 
-                const chatsResponse = await fetch(`http://localhost/api/user/${params.userId}/chats`, {
+                const chatsResponse = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${params.userId}/chats`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
                 })
 
-                if (!chatsResponse.ok) throw new Error('Unauthorized')
+                if (!chatsResponse.ok) {
+                    setLoader(false)
+                    getTostify('error', 'Failed to fetch chats, check credentials')
+                    return;
+                }
 
                 const chatsData = await chatsResponse.json()
                 setChats(chatsData)
             } catch (error) {
-                console.error(error)
+                getTostify('error', error.message)
             } finally {
                 setLoader(false)
             }
@@ -67,9 +74,8 @@ export default function Chats() {
 
         const socket = getSocket(token);
 
-
         const newChatHandler = async (data) => {
-            const response = await fetch(`http://localhost/api/user/${params.userId}/chats/${data.chatId}`, {
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${params.userId}/chats/${data.chatId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'

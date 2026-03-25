@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getSocket } from '@/app/socket'
-import ErrorMessage from '@/app/components/ErrorMessage'
+import { getTostify } from '@/app/tostify'
 
 export default function Message({user, authId, message, setMessage}) {
     const isSender = Number(user.id) === Number(authId);
     const [ token, setToken] = useState(null);
-    const [error, setError] = useState('')
 
     useEffect(() => {
         const t = localStorage.getItem('token')
@@ -22,13 +21,15 @@ export default function Message({user, authId, message, setMessage}) {
         return () => {
             socket.off('message_delete', messageDeleteHandler)
         }
-    }, [setMessage, token])
+    }, [setMessage])
 
     async function handleDeleteMessage() {
         const chatId = message?.chatId ?? message.chat.id;
 
+        if (!confirm('Are you sure?')) return;
+
         try {
-            const deleteResponse = await fetch(`http://localhost/api/user/${ user.id }/chats/${ chatId }/messages/${ message.id }`, {
+            const deleteResponse = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${ user.id }/chats/${ chatId }/messages/${ message.id }`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${ token }`,
@@ -39,15 +40,14 @@ export default function Message({user, authId, message, setMessage}) {
 
             if (! deleteResponse.ok) {
                 const resData = await deleteResponse.json()
-                setError(resData.message || 'Failed to delete message')
+                getTostify('error', resData.message)
             } else {
+                getTostify('success', 'Message deleted successfully')
                 setMessage(prev => prev.filter(m => m.id !== message.id))
             }
         } catch (error) {
-            setError(error.message || 'Delete message failed in Message')
+            getTostify('error', error.message)
         }
-
-        setTimeout(() => setError(''), 5000)
     }
 
     function formatTime(message) {
@@ -73,8 +73,7 @@ export default function Message({user, authId, message, setMessage}) {
 
     return (
         <div className="message-content">
-            {error && <ErrorMessage error={error} />}
-            <div className={isSender ? "message-sender" : "message-receiver"} onMouseDown={isSender ? handleDeleteMessage : null}>
+            <div className={isSender ? "message-sender" : "message-receiver"} onClick={isSender ? handleDeleteMessage : null}>
                 <div className={ isSender ? "message-sender-body" : "message-receiver-body" }>
                     { ! isSender && <div className="message-meta">{ message.user.username }</div> }
                     <div className="message-text">{ message.body }</div>

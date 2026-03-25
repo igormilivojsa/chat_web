@@ -1,14 +1,19 @@
 'use client'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { toast, ToastContainer, Bounce } from 'react-toastify'
+import { useState } from 'react'
+import { getTostify } from '@/app/tostify'
 
 export default function Login() {
     const {register, handleSubmit} = useForm();
     const router = useRouter();
+    const [ loader, setLoader] = useState(false);
 
     const onSubmit = async(data) => {
         try {
-            const response = await fetch('http://localhost/api/login', {
+            setLoader(true);
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/login', {
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/json',
@@ -17,18 +22,27 @@ export default function Login() {
             })
 
             if (!response.ok) {
-                throw new Error('Login failed')
+                getTostify('error', 'Login failed, check credentials');
+                setLoader(false);
+                return;
             }
 
             const result = await response.json();
 
             localStorage.setItem('token', result.token)
 
+            getTostify('success', 'Login successful');
+
             router.push(`/${ result.user.id }/chats`)
         } catch(error) {
             console.log(error)
-            alert('Check credentials')
+        } finally {
+            setLoader(false);
         }
+    }
+
+    if (loader) {
+        return <div>Loading...</div>
     }
 
     return (
@@ -48,7 +62,7 @@ export default function Login() {
                         </label>
                         <input {...register("password")} type="password" className="form-control m-3 w-50 mx-auto"/>
 
-                        <button className="m-3 w-50 mx-auto" type="submit" onKeyDown={e => handleSubmit()}>
+                        <button className="m-3 w-50 mx-auto" type="submit">
                             Submit
                         </button>
                     </form>

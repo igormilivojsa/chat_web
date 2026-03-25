@@ -4,7 +4,7 @@ let socket;
 
 export const getSocket = (token) => {
     if (!socket || socket.disconnected) {
-        socket = io('http://localhost:3001', {
+        socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
             auth: { token }
         });
 

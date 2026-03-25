@@ -1,9 +1,11 @@
 import SidebarListItem from '@/app/components/SidebarListItem'
 import { useForm } from 'react-hook-form'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSocket, resetSocket } from '@/app/socket'
+import { Bounce, toast, ToastContainer } from 'react-toastify'
+import { getTostify } from '@/app/tostify'
 
 export default function SidebarList({setSelectedChat, user, chats, setChats, selectedChat, onlineUsers}) {
     const {register, handleSubmit, reset} = useForm({
@@ -14,15 +16,16 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
     const [ token, setToken] = useState(null);
     const router = useRouter();
     const isOnline = user && onlineUsers.has(user.id.toString());
+    const params = useParams();
+    const userId = params.userId;
 
     useEffect(() => {
         setToken(localStorage.getItem('token'));
-
     }, [])
 
     const onSubmit = async(data) => {
         try {
-            const response = await fetch(`http://localhost/api/user/${user.id}/chats`, {
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -32,7 +35,8 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
             })
 
             if (!response.ok) {
-                throw new Error('Chat exists')
+                getTostify('error', 'Failed to create chat, this email does not exist. Please try again with a different email.')
+                return;
             }
 
             const newChat = await response.json()
@@ -41,10 +45,9 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
 
             reset({body: ''});
 
-            alert('Chat created');
+            getTostify('success', 'Chat created successfully!')
         } catch(error) {
-            console.error(error)
-            alert('Check credentials')
+            getTostify('error', error.message)
         }
     }
 
@@ -60,6 +63,8 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
         setToken(null);
         setChats([]);
         setSelectedChat(null);
+
+        getTostify('success', 'Logged out successfully')
 
         router.push('/login')
     }
@@ -109,7 +114,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
                     </button>
                     <ul className="dropdown-menu">
                         <li>
-                            <Link className="dropdown-item" href={`/${user.id}/profile`}>Settings</Link>
+                            <Link className="dropdown-item" href={`/${userId}/profile`}>Settings</Link>
                         </li>
                         <li>
                             <Link className="dropdown-item" onClick={handleLogout} href="/">Logout</Link>
