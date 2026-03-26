@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getSocket } from '@/app/socket'
 import { getTostify } from '@/app/tostify'
+import { apiFetch } from '@/app/apiFetch'
 
 export default function Message({user, authId, message, setMessage}) {
     const isSender = Number(user.id) === Number(authId);
-    const [ token, setToken] = useState(null);
 
     useEffect(() => {
-        const t = localStorage.getItem('token')
-        setToken(t);
-
-        const socket = getSocket(t);
+        const socket = getSocket(localStorage.getItem('token'));
 
         const messageDeleteHandler = (data) => {
             setMessage(prev => prev.filter(m => m.id !== data.messageId))
@@ -29,22 +26,12 @@ export default function Message({user, authId, message, setMessage}) {
         if (!confirm('Are you sure?')) return;
 
         try {
-            const deleteResponse = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${ user.id }/chats/${ chatId }/messages/${ message.id }`, {
+            const deleteResponse = await apiFetch(`/user/${ user.id }/chats/${ chatId }/messages/${ message.id }`, {
                 method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${ token }`,
-                    'Content-Type': 'application/json',
-                },
-            })
+            }, null);
 
-
-            if (! deleteResponse.ok) {
-                const resData = await deleteResponse.json()
-                getTostify('error', resData.message)
-            } else {
-                getTostify('success', 'Message deleted successfully')
-                setMessage(prev => prev.filter(m => m.id !== message.id))
-            }
+            getTostify('success', 'Message deleted successfully')
+            setMessage(prev => prev.filter(m => m.id !== message.id))
         } catch (error) {
             getTostify('error', error.message)
         }

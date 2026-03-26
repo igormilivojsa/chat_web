@@ -1,11 +1,10 @@
 import SidebarListItem from '@/app/components/SidebarListItem'
 import { useForm } from 'react-hook-form'
-import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSocket, resetSocket } from '@/app/socket'
-import { Bounce, toast, ToastContainer } from 'react-toastify'
 import { getTostify } from '@/app/tostify'
+import { apiFetch } from '@/app/apiFetch'
 
 export default function SidebarList({setSelectedChat, user, chats, setChats, selectedChat, onlineUsers}) {
     const {register, handleSubmit, reset} = useForm({
@@ -13,33 +12,17 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
             body: '',
         }
     })
-    const [ token, setToken] = useState(null);
     const router = useRouter();
     const isOnline = user && onlineUsers.has(user.id.toString());
     const params = useParams();
     const userId = params.userId;
 
-    useEffect(() => {
-        setToken(localStorage.getItem('token'));
-    }, [])
-
     const onSubmit = async(data) => {
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats`, {
+            const newChat = await apiFetch(`/user/${userId}/chats`, {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-type': 'application/json',
-                },
                 body: JSON.stringify(data)
-            })
-
-            if (!response.ok) {
-                getTostify('error', 'Failed to create chat, this email does not exist. Please try again with a different email.')
-                return;
-            }
-
-            const newChat = await response.json()
+            }, null)
 
             setChats(prev => [...prev, newChat])
 
@@ -52,15 +35,14 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
     }
 
     function handleLogout() {
-        const token = localStorage.getItem('token');
-        const socket = getSocket(token)
+        const socket = getSocket(localStorage.getItem('token'))
 
         socket.disconnect();
         resetSocket();
 
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
 
-        setToken(null);
         setChats([]);
         setSelectedChat(null);
 

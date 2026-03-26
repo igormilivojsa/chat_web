@@ -6,12 +6,12 @@ import Message from '@/app/components/Message'
 import MessageInput from '@/app/components/MessageInput'
 import { getSocket } from '@/app/socket'
 import { getTostify } from '@/app/tostify'
+import { apiFetch } from '@/app/apiFetch'
 
 export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const params = useParams();
     const userId = params.userId;
     const [ messages, setMessages] = useState([]);
-    const [ token , setToken ] = useState(null);
     const router = useRouter();
     const bottomRef = useRef(null);
     const [ willParticipate, setWillParticipate] = useState(null);
@@ -27,55 +27,32 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             return;
         }
 
-        const storedToken = localStorage.getItem('token');
-        setToken(storedToken);
-
-        if (!storedToken) {
-            getTostify('error', 'Unauthenticated')
-            router.push('/login');
-            return;
-        }
-
         const fetchMessages = async () => {
             try {
-                const response = await fetch(
-                    process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chat.id}/messages`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${storedToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
+                const messagesData = await apiFetch(`/user/${userId}/chats/${chat.id}/messages`, {},     router);
 
-                if (!response.ok) {
-                    getTostify('error', 'Failed to fetch messages, check credentials')
+                if (!messagesData) {
+                    return null;
                 }
+                    setMessages(messagesData);
 
-                const data = await response.json();
-                setMessages(data);
-
-                const myMessages = data.filter(message => Number(message.user.id) === Number(userId));
+                const myMessages = messagesData.filter(message => Number(message.user.id) === Number(userId));
                 const myLatestMessage = myMessages[myMessages.length - 1];
                 setIsRead(myLatestMessage?.isRead ?? false);
 
                 try {
-                    await fetch(
-                        process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chat.id}/messages/read`,
+                    await apiFetch(`/user/${userId}/chats/${chat.id}/messages/read`,
                         {
                             method: 'PATCH',
-                            headers: {
-                                Authorization: `Bearer ${storedToken}`,
-                                'Content-Type': 'application/json',
-                            },
-                        }
+                        },
+                        router
                     );
                 } catch (error) {
                     getTostify('error', error.message)
                 }
 
                 const isCreator = Number(chat.creator) === Number(userId);
-                const userHasMessages = data.some(message => message.user.id == userId)
+                const userHasMessages = messagesData.some(message => message.user.id == userId)
                 setWillParticipate(isCreator || userHasMessages)
             } catch (error) {
                 getTostify('error', error.message)
@@ -94,7 +71,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             return;
         }
 
-        const socket = getSocket(token);
+        const socket = getSocket(localStorage.getItem('token'));
 
         socket.emit('join_chat', chat.id)
 
@@ -147,7 +124,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             return;
         }
 
-        const socket = getSocket(token);
+        const socket = getSocket(localStorage.getItem('token'));
 
         const handleTyping = ({ userId: typingUserId }) => {
             if (Number(typingUserId) === Number(userId)) return;
@@ -168,24 +145,15 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             socket.off('user_typing', handleTyping);
             socket.off('user_stop_typing', handleStopTyping);
         };
-    }, [chat?.id, token]);
+    }, [chat?.id]);
 
     async function handleDelete() {
         try {
-            const response = await fetch(
-                process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chat.id}`,
+            const response = await apiFetch( `/user/${userId}/chats/${chat.id}`,
                 {
                     method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
+                }, router
             );
-
-            if (!response.ok) {
-                getTostify('error', 'Failed to delete chat, check credentials')
-            }
 
             getTostify('success', 'Chat deleted successfully')
         } catch (error) {

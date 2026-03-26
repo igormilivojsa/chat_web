@@ -1,7 +1,6 @@
 'use client'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
-import { toast, ToastContainer, Bounce } from 'react-toastify'
 import { useState } from 'react'
 import { getTostify } from '@/app/tostify'
 
@@ -13,7 +12,7 @@ export default function Login() {
     const onSubmit = async(data) => {
         try {
             setLoader(true);
-            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/login', {
+            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/login_check', {
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/json',
@@ -30,6 +29,7 @@ export default function Login() {
             const result = await response.json();
 
             localStorage.setItem('token', result.token)
+            localStorage.setItem('refresh_token', result.refresh_token)
 
             getTostify('success', 'Login successful');
 

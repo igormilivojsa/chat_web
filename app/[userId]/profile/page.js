@@ -3,6 +3,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { getTostify } from '@/app/tostify'
+import { apiFetch } from '@/app/apiFetch'
 
 export default function Settings() {
     const params = useParams();
@@ -10,33 +11,20 @@ export default function Settings() {
     const { register, handleSubmit } = useForm();
     const router = useRouter();
     const [user, setUser] = useState();
-    const [token, setToken] = useState(null);
     const [ loader, setLoader] = useState(false);
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('token');
-        setToken(storedToken);
 
         const fetchUser = async () => {
             try {
                 setLoader(true)
-                const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${ userId }`, {
-                    headers: {
-                        Authorization: `Bearer ${ storedToken }`,
-                        'Content-Type': 'application/json',
-                    },
-                });
+                const userData = await apiFetch(`/user/${ userId }`, router);
 
-                if (! response.ok) {
-                    setLoader(false)
-                    getTostify('error', 'Failed to fetch user data, check credentials')
-                    return;
-                }
-
-                const data = await response.json();
-                setUser(data);
+                setUser(userData);
             } catch (error) {
                 getTostify('error', error.message)
+            } finally {
+                setLoader(false)
             }
         }
 
@@ -45,23 +33,12 @@ export default function Settings() {
 
     const onSubmit = async (data) => {
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${userId}`, {
+            const updateUserData = await apiFetch(`/user/${userId}`, {
                 method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(data),
-            });
-
-            if (response.status === 401) {
-                getTostify('error', 'Unauthenticated')
-                router.push('/login');
-                return;
-            }
-
-            if (!response.ok) {
-                getTostify('error', 'Failed to update profile, check credentials')
+            }, router);
+            if (!updateUserData) {
+                getTostify('error', 'Failed to update profile')
                 return;
             }
 
@@ -76,6 +53,7 @@ export default function Settings() {
     if (!user || loader) {
         return <div>Loading...</div>;
     }
+
     return (
         <div className="container d-flex justify-content-center align-items-center vh-100">
             <div className="w-50 card text-center">

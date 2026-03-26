@@ -3,8 +3,8 @@
 import { useForm } from 'react-hook-form'
 import { useEffect, useState } from 'react'
 import { getSocket } from '@/app/socket'
-import { toast } from 'react-toastify'
 import { getTostify } from '@/app/tostify'
+import { apiFetch } from '@/app/apiFetch'
 
 export default function MessageInput({userId, chatId}) {
     const {register, handleSubmit, reset, watch} = useForm({
@@ -12,16 +12,11 @@ export default function MessageInput({userId, chatId}) {
             body: '',
         }
     })
-    const [ token, setToken] = useState(null);
     const [loader, setLoader] = useState(false);
-
-    useEffect(() => {
-        setToken(localStorage.getItem('token'));
-    }, [])
 
     const bodyValue = watch('body');
 
-    const socket = token ? getSocket(token) : null;
+    const socket = getSocket(localStorage.getItem('token'));
 
     useEffect(() => {
         if (!socket) return;
@@ -36,20 +31,11 @@ export default function MessageInput({userId, chatId}) {
     const onSubmit = async(data) => {
         setLoader(true);
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/user/${userId}/chats/${chatId}/messages`, {
+            const newMessageData = await apiFetch(`/user/${userId}/chats/${chatId}/messages`, {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-type': 'application/json',
-                },
                 body: JSON.stringify(data)
-            })
+            }, null);
 
-            if (!response.ok) {
-                setLoader(false);
-                getTostify('error', 'Failed to send message, check credentials')
-                return;
-            }
 
             setLoader(false);
             getTostify('success', 'Message sent successfully')
