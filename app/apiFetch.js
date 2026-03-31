@@ -37,7 +37,7 @@ export const apiFetch = async (url, options = {}, router = null) => {
 
     if (response.ok) return response.json();
     if (response.status !== 401) return null;
-    if (!response) return null;
+
     const newToken = await refresh();
 
     if (! newToken) {

@@ -77,7 +77,6 @@
   background: transparent;
 }
 
-/* simple input + button look — tweak to taste */
 .composer form { display: flex; gap: 8px; }
 .composer input[type="text"] {
   flex: 1;
@@ -91,4 +90,11 @@
   border: none;
   background: #2563eb;
   color: #fff;
+}
+
+#add-chat {
+  display:block;
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
 }
