@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { getTostify } from '@/app/tostify'
 import { useState } from 'react'
+import { apiFetch } from '@/app/apiFetch'
+import { GoogleLogin } from '@react-oauth/google'
 
 export default function Register() {
     const {register, handleSubmit} = useForm();
@@ -42,6 +44,31 @@ export default function Register() {
         }
     }
 
+    const handleGoogleLogin = async (credentialResponse) => {
+        try {
+            setLoader(true);
+
+            const result = await apiFetch('/login/google', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json',
+                },
+                body: JSON.stringify({
+                    credential: credentialResponse.credential
+                }),
+            }, router)
+
+            localStorage.setItem('token', result.token)
+            localStorage.setItem('refresh_token', result.refresh_token)
+            getTostify('success', 'Google login successful');
+            router.push(`/${result.user.id}/chats`);
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoader(false);
+        }
+    }
+
     if (loader) {
         return <div>Loading...</div>
     }
@@ -70,6 +97,12 @@ export default function Register() {
                             Submit
                         </button>
                     </form>
+                    <div className="mt-4 w-50 mx-auto">
+                        <GoogleLogin
+                            onSuccess={handleGoogleLogin}
+                            onError={() => getTostify('error', 'Google login failed')}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
