@@ -53,11 +53,11 @@ export default function MessageInput({userId, chatId}) {
     }
 
    return (
-        <div className="composer">
+        <>
             <form className="d-flex w-100 mb-0" onSubmit={handleSubmit(onSubmit)}>
                 <input type="text" {...register("body")} required className="flex-grow-1" />
                 <button type="submit">Send</button>
             </form>
-        </div>
+        </>
     )
 }
