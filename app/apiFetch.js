@@ -47,9 +47,11 @@ export const apiFetch = async (url, options = {}, router = null) => {
     }
 
     const retryData = await fetch(process.env.NEXT_PUBLIC_API_URL + url, {
+        ...options,
         headers: {
-            Authorization: `Bearer ${ newToken }`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${newToken}`,
+            'Content-Type': 'application/json',
+            ...options.headers
         }
     });
 

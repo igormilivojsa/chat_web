@@ -48,31 +48,33 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
     }, [searchTerm, users]);
 
     const onSubmit = async(data) => {
-        try {
-            const newChat = await apiFetch(`/user/${userId}/chats`, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }, null)
-
-            // if (newChat === undefined) {
-            //     const existingChat = chats.find(chat =>
-            //         chat.participant.some(p => p.email === data.email)
-            //     );
-            //     console.log(existingChat)
-            //     setSelectedChat(existingChat);
-            //     getTostify('error', 'Chat already exists')
-            //     return;
-            // }
-
-            setChats(prev => [...prev, newChat])
-
+        const existingChat = chats.find(chat =>
+            chat.participant.some(p => p.id === data.id)
+        );
+        if (existingChat) {
+            setSelectedChat(existingChat);
             setSearchTerm('');
-            setSelectedChat(newChat);
             setFilteredUsers([]);
+        } else {
+            try {
+                const newChat = await apiFetch(`/user/${userId}/chats`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                }, null)
 
-            getTostify('success', 'Chat created successfully!')
-        } catch(error) {
-            getTostify('error', error.message)
+                setChats(prev => {
+                    const filtered = prev.filter(c => c.id !== newChat.id);
+                    return [...filtered, newChat];
+                });
+
+                setSearchTerm('');
+                setSelectedChat(newChat);
+                setFilteredUsers([]);
+
+                getTostify('success', 'Chat created successfully!')
+            } catch(error) {
+                getTostify('error', error.message)
+            }
         }
     }
 
@@ -88,9 +90,8 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
             if (!chat) return;
 
             setChats(prev => {
-                const exists = prev.some(c => c.id === chat.id);
-                if (exists) return prev;
-                return [chat, ...prev];
+                const filtered = prev.filter(c => c.id !== chat.id);
+                return [chat, ...filtered];
             });
         });
 
@@ -106,7 +107,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
         resetSocket();
 
         localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('refresh_token');
 
         setChats([]);
         setSelectedChat(null);
@@ -118,23 +119,27 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
 
     return (
         <div className="col-2 bg-light border-end sidebar-vh">
+            {/*Logo*/}
             <div className="sidebar-20 p-2">
                 Logo
                 <hr className="my-1" />
             </div>
+
+            {/*Chats*/}
             <div className="sidebar-70 px-2 list-group">
                 <input type="text" placeholder="Search" className="form-control" value={searchTerm} onChange={handleSearch}/>
                 { searchTerm.length >= 2 && filteredUsers.map(filteredUser => (
-                    <div className="card" key={filteredUser.id} onClick={() => onSubmit({ email: filteredUser.email })}>
+                    <div className="card" key={filteredUser.id} onClick={() => onSubmit({id: filteredUser.id,  email: filteredUser.email })}>
                         <p className="card-header">{ filteredUser.isActive === 1 ? 'online ' : 'offline '}{ filteredUser.username }</p>
                     </div>
                 ))}
 
                 {searchTerm.length < 2 && chats.map(chat => (
-                    <SidebarListItem onClick={ () => setSelectedChat(chat) } onlineUsers={onlineUsers} isSelected={selectedChat?.id === chat.id} key={ chat.id } chat={ chat }/>
+                    <SidebarListItem onClick={ () => setSelectedChat(chat) } onlineUsers={onlineUsers} isSelected={chat.id === selectedChat?.id} key={ chat.id } chat={ chat }/>
                 )) }
             </div>
 
+            {/*Profile*/}
             <div className="sidebar-10 p-2 border-top">
                 <div className="dropdown">
                     <button
@@ -168,7 +173,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
                             </Link>
                         </li>
                         <li>
-                            <Link className="dropdown-item" onClick={handleLogout} href="/">
+                            <Link className="dropdown-item" onClick={handleLogout} href="#">
                                 Logout
                             </Link>
                         </li>
