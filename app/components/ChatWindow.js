@@ -17,6 +17,8 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const [ willParticipate, setWillParticipate] = useState(null);
     const [ isTyping, setIsTyping] = useState(false);
     const [ isRead, setIsRead] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const isInitialLoad = useRef(false);
 
     //Fetch messages
     useEffect(() => {
@@ -34,7 +36,9 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 if (!messagesData) {
                     return null;
                 }
-                    setMessages(messagesData);
+
+                isInitialLoad.current = true;
+                setMessages(messagesData);
 
                 const myMessages = messagesData.filter(message => Number(message.user.id) === Number(userId));
                 const myLatestMessage = myMessages[myMessages.length - 1];
@@ -62,8 +66,18 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         setMessages([]);
         setWillParticipate(null);
         setIsRead(false);
+        isInitialLoad.current = false; // add this
         fetchMessages();
     }, [chat, userId]);
+
+    useEffect(() => {
+        if (isInitialLoad.current) {
+            bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+            isInitialLoad.current = false;
+        } else if (isAtBottom()) {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
 
     //Join chat
     useEffect(() => {
@@ -83,8 +97,8 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 }
 
                 setMessages(prev => {
-                    const updated = [...prev, payload];
-                    return updated;
+                    if (prev.some(m => m.id === payload.id)) return prev;
+                    return [...prev, payload];
                 });
             }
         };
@@ -112,11 +126,6 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             socket.emit("leave_chat", chat.id);
         }
     }, [chat?.id])
-
-    //Scroll to bottom
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-    }, [messages])
 
     //Handle typing
     useEffect(() => {
@@ -161,11 +170,56 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         }
     }
 
+    const handleScroll = async (e) => {
+        if (e.target.scrollTop === 0) {
+            const container = e.target;
+            const prevHeight = container.scrollHeight;
+
+            await loadMore();
+
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight - prevHeight;
+            }, 0);
+        }
+    };
+
+    const isAtBottom = () => {
+        const el = bottomRef.current?.parentElement;
+        if (!el) return true;
+
+        return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    };
+
+
+    const loadMore = async () => {
+        if (!messages.length || loadingMore) return;
+
+        setLoadingMore(true);
+
+        const oldest = messages[0];
+
+        const data = await apiFetch(
+            `/user/${userId}/chats/${chat.id}/messages?beforeId=${oldest.id}`,
+            {},
+            router
+        );
+
+        if (data.length > 0) {
+            setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const fresh = data.filter(m => !existingIds.has(m.id));
+                return [...fresh, ...prev];
+            });
+        }
+
+        setLoadingMore(false);
+    };
+
     if (!chat) return null;
 
     return (
         <div className="col-10 bg-light d-flex flex-column chat-column" style={{ paddingLeft: '10%', paddingRight: '10%', height: '100vh' }}>
-            <div className="messages-container">
+            <div className="messages-container" onScroll={handleScroll}>
                 {messages.map((message, index) => {
                     const isLastMessage =
                         Number(message.user.id) === Number(userId) &&
