@@ -8,6 +8,7 @@ import { getSocket } from '@/app/socket'
 import { getTostify } from '@/app/tostify'
 import { apiFetch } from '@/app/apiFetch'
 import { BsThreeDots } from 'react-icons/bs'
+import { TiDeleteOutline } from 'react-icons/ti'
 
 export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const params = useParams();
@@ -284,22 +285,49 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
             { isChatInfoOpen && (
                 <div
-                    className="border-start"
-                    style={ {width: '25%', flexShrink: 0, height: '100vh', overflowY: 'auto', overflowX: 'hidden'} }
+                    className="border-start bg-white d-flex flex-column"
+                    style={{ width: "25%", height: "100vh", overflowY: "auto" }}
                 >
-                    <div id="info-icon" className="gap-2">
-                        <div className="avatar-wrapper">
-                            {receiver.icon.length === 1 ? (
-                                <div className="avatar">{receiver.icon}</div>
-                            ) : (
-                                 <img className="avatar" src={receiver.icon} />
-                             )}
-                        </div>
-                        { receiver.username }
+                    <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <h6 className="mb-0 fw-semibold">Chat Info</h6>
+                        <button className="btn btn-light btn-sm rounded-circle">
+                            <TiDeleteOutline size={20} />
+                        </button>
                     </div>
-                    <div id="info-images" className="row row-cols-3">
-                        <div className="col">
-                            image
+
+                    <div className="text-center p-4">
+                        <div className="big-avatar-wrapper mx-auto mb-3">
+                            {receiver.icon.length === 1 ? (
+                                <div className="big-avatar">
+                                    {receiver.icon}
+                                </div>
+                            ) : (
+                                 <img
+                                     className="big-avatar"
+                                     src={receiver.icon}
+                                     alt={receiver.username}
+                                 />
+                             )}
+                            <span
+                                className={`chat-info-online-dot ${
+                                    receiver.isOnline ? "online" : "offline"
+                                }`}
+                            ></span>
+                        </div>
+                        <h5 className="mb-1 fw-bold">{receiver.username}</h5>
+                        <small className="text-muted">
+                            {receiver.isOnline ? "Online" : "Offline"}
+                        </small>
+                    </div>
+
+                    <hr className="my-0" />
+
+                    <div className="p-3">
+                        <h6 className="text-muted mb-3">Shared Images</h6>
+                        <div className="row g-2">
+                            <div className="col-4">
+                                Image
+                            </div>
                         </div>
                     </div>
                 </div>
