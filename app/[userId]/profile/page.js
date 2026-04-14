@@ -8,17 +8,23 @@ import { apiFetch } from '@/app/apiFetch'
 export default function Settings() {
     const params = useParams();
     const userId = params.userId;
-    const { register, handleSubmit } = useForm();
     const router = useRouter();
     const [user, setUser] = useState();
     const [ loader, setLoader] = useState(false);
+    const { register, handleSubmit, reset } = useForm({
+        defaultValues: {
+            username: '',
+            password: '',
+            icon: '',
+        }
+    });
 
     useEffect(() => {
 
         const fetchUser = async () => {
             try {
                 setLoader(true)
-                const userData = await apiFetch(`/user/${ userId }`, router);
+                const userData = await apiFetch(`/user/${ userId }`, {method: 'GET'}, router);
 
                 setUser(userData);
             } catch (error) {
@@ -31,16 +37,37 @@ export default function Settings() {
         fetchUser();
     }, [])
 
+    useEffect(() => {
+        if (user) {
+            reset({
+                username: user.username,
+                password: '',
+                icon: '',
+            })
+        }
+    }, [user]);
+
     const onSubmit = async (data) => {
         try {
+            if (data.icon[0] instanceof File && data.icon[0].size > 0) {
+                const formData = new FormData();
+                formData.append('icon', data.icon[0]);
+                await apiFetch(`/user/${userId}/avatar`, {
+                    'method': 'PATCH',
+                    body: formData
+                }, router);
+            }
+
             const updateUserData = await apiFetch(`/user/${userId}`, {
                 method: 'PATCH',
-                body: JSON.stringify(data),
+                body: JSON.stringify({ username: data.username, password: data.password }),
             }, router);
+
             if (!updateUserData) {
                 getTostify('error', 'Failed to update profile')
                 return;
             }
+
 
             getTostify('success', 'Profile updated successfully')
 
@@ -55,39 +82,65 @@ export default function Settings() {
     }
 
     return (
-        <div className="container d-flex justify-content-center align-items-center vh-100">
-            <div className="w-50 card text-center">
-                <div className="card-header bg-white border-0">
-                    Edit profile
-                </div>
-                <div className="card-body text-center">
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="form-group">
-                            <label>Username</label>
-                            <input
-                                {...register("username")}
-                                type="text"
-                                required
-                                placeholder={user.username}
-                                className="form-control m-3 w-50 mx-auto"
-                            />
+        <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+            <div className="card shadow-sm border-0 p-4" style={{ width: "420px", borderRadius: "16px" }}>
 
-                            <label>Password</label>
-                            <input
-                                {...register("password")}
-                                type="password"
-                                required
-                                placeholder="Enter new password"
-                                className="form-control m-3 w-50 mx-auto"
-                            />
-
-                            <button className="m-3 w-50 mx-auto" type="submit">
-                                Submit
-                            </button>
+                <div className="text-center mb-4">
+                    <div className="mb-3">
+                        <div
+                            className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white mx-auto"
+                            style={{ width: "72px", height: "72px", fontSize: "28px" }}
+                        >
+                            {user?.username?.[0]?.toUpperCase()}
                         </div>
-                    </form>
+                    </div>
+
+                    <h5 className="mb-0 fw-semibold">Edit profile</h5>
+                    <small className="text-muted">Update your account details</small>
                 </div>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit(onSubmit)}>
+
+                    <div className="mb-3">
+                        <label className="form-label">Username</label>
+                        <input
+                            {...register("username")}
+                            type="text"
+                            className="form-control rounded-3"
+                            placeholder="Username"
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">New password</label>
+                        <input
+                            {...register("password")}
+                            type="password"
+                            className="form-control rounded-3"
+                            placeholder="••••••••"
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">Profile picture</label>
+                        <input
+                            {...register("icon")}
+                            type="file"
+                            className="form-control rounded-3"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary w-100 rounded-3 py-2 fw-semibold"
+                    >
+                        Save changes
+                    </button>
+
+                </form>
             </div>
         </div>
-    )
+    );
 }

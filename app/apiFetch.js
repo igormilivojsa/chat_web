@@ -1,5 +1,4 @@
 import { getTostify } from '@/app/tostify'
-import { log } from 'next/dist/server/typescript/utils'
 
 const refresh = async () => {
     const refreshToken = localStorage.getItem('refresh_token');
@@ -26,11 +25,13 @@ const refresh = async () => {
 
 export const apiFetch = async (url, options = {}, router = null) => {
     const token = localStorage.getItem('token');
+    const isFormData = options.body instanceof FormData;
+
     const response = await fetch(process.env.NEXT_PUBLIC_API_URL + url, {
         ...options,
         headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            ...(!isFormData && { 'Content-Type': 'application/json' }),
             ...options.headers
         }
     })
@@ -50,7 +51,7 @@ export const apiFetch = async (url, options = {}, router = null) => {
         ...options,
         headers: {
             Authorization: `Bearer ${newToken}`,
-            'Content-Type': 'application/json',
+            ...(!isFormData && { 'Content-Type': 'application/json' }),
             ...options.headers
         }
     });
