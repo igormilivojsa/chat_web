@@ -117,18 +117,6 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
         router.push('/login')
     }
 
-    // const handleChatDelete = async (e) => {
-    //     e.preventDefault();
-    //     if (window.confirm('Are you sure you want to delete this chat?')) {
-    //         const deleteResponse = await apiFetch(`/user/${ user.id }/chats/${ chatId }`, {
-    //             method: 'DELETE',
-    //         }, null);
-    //
-    //         getTostify('success', 'Chat deleted successfully')
-    //         setChats(prev => prev.filter(c => c.id !== chat.id))
-    //     }
-    // }
-
     return (
         <div className="col-2 bg-light border-end sidebar-vh">
             {/*Logo*/}
@@ -139,7 +127,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
 
             {/*Chats*/}
             <div className="sidebar-70 px-2 list-group">
-                <input type="text" placeholder="Search" className="form-control" value={searchTerm} onChange={handleSearch}/>
+                <input type="text" placeholder="Search" className="form-control mb-3" value={searchTerm} onChange={handleSearch}/>
                 { searchTerm.length >= 2 && filteredUsers.map(filteredUser => (
                     <div className="card" key={filteredUser.id} onClick={() => onSubmit({id: filteredUser.id,  email: filteredUser.email })}>
                         <p className="card-header">{ filteredUser.isActive === 1 ? 'online ' : 'offline '}{ filteredUser.username }</p>
@@ -161,21 +149,17 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
                         aria-expanded="false"
                     >
 
-                        <img
-                            id="user-profile-image"
-                            src="data:image/png;base64,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"
-                            alt="User icon"
-                        />
+                        <div className="avatar-wrapper">
+                            {user.icon.length === 1 ? (
+                                <div className="avatar">{user.icon}</div>
+                            ) : (
+                                 <img className="avatar" src={user.icon} />
+                             )}
+
+                            <span className={`online-dot ${isOnline ? 'online' : 'offline'}`} />
+                        </div>
 
                         {user && <span>{user.username}</span>}
-
-                        <span
-                            className={`position-absolute top-0 start-100 translate-middle p-2 border border-light rounded-circle ${
-                                isOnline ? "bg-success" : "bg-danger"
-                            }`}
-                        >
-                            <span className="visually-hidden">status</span>
-                        </span>
                     </button>
 
                     <ul className="dropdown-menu">

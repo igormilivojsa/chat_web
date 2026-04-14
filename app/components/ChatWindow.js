@@ -22,7 +22,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const isInitialLoad = useRef(false);
     const receiver = selectedChat?.participant.find(participant => participant.id != userId);
     const [isChatInfoOpen, setIsChatInfoOpen] = useState(false);
-    console.log(receiver)
+
     //Fetch messages
     useEffect(() => {
         if (! chat) {
@@ -231,11 +231,18 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 style={ {minWidth: 0, paddingLeft: '1%', paddingRight: '1%'} }
             >
                 <div className="row mw-100" id="chat-header">
-                    <div className="col text-dark mw-100 text-start" id="chat-title">
-                        <img src="" alt="i" id="chat-profile-picture"/>
+                    <div className="col d-flex align-items-center gap-2" id="chat-title">
+                        {receiver.icon.length === 1 ? (
+                            <div className="avatar">
+                                {receiver.icon}
+                            </div>
+                        ) : (
+                             <img className="avatar" src={receiver.icon} alt="profile icon" />
+                         )}
+
                         { receiver.username }
                     </div>
-                    <div className="col text-muted mw-100 text-end" id="chat-title">
+                    <div className="col mw-100 text-end" id="chat-title">
                         <button onClick={ handleOpenChatInfo } id="more-button">
                             <BsThreeDots/>
                         </button>
@@ -278,15 +285,22 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             { isChatInfoOpen && (
                 <div
                     className="border-start"
-                    style={ {width: '24.999%', flexShrink: 0, height: '100vh', overflowY: 'auto'} }
+                    style={ {width: '25%', flexShrink: 0, height: '100vh', overflowY: 'auto', overflowX: 'hidden'} }
                 >
-                    <div id="info-icon">
-                        <img src="" alt="icon"/>
+                    <div id="info-icon" className="gap-2">
+                        <div className="avatar-wrapper">
+                            {receiver.icon.length === 1 ? (
+                                <div className="avatar">{receiver.icon}</div>
+                            ) : (
+                                 <img className="avatar" src={receiver.icon} />
+                             )}
+                        </div>
                         { receiver.username }
                     </div>
-                    <hr/>
-                    <div>
-                        images
+                    <div id="info-images" className="row row-cols-3">
+                        <div className="col">
+                            image
+                        </div>
                     </div>
                 </div>
             ) }
