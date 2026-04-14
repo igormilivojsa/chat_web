@@ -7,33 +7,36 @@ import MessageInput from '@/app/components/MessageInput'
 import { getSocket } from '@/app/socket'
 import { getTostify } from '@/app/tostify'
 import { apiFetch } from '@/app/apiFetch'
+import { BsThreeDots } from 'react-icons/bs'
 
 export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const params = useParams();
     const userId = params.userId;
-    const [ messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState([]);
     const router = useRouter();
     const bottomRef = useRef(null);
-    const [ willParticipate, setWillParticipate] = useState(null);
-    const [ isTyping, setIsTyping] = useState(false);
-    const [ isRead, setIsRead] = useState(false);
+    const [willParticipate, setWillParticipate] = useState(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const [isRead, setIsRead] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const isInitialLoad = useRef(false);
-
+    const receiver = selectedChat?.participant.find(participant => participant.id != userId);
+    const [isChatInfoOpen, setIsChatInfoOpen] = useState(false);
+    console.log(receiver)
     //Fetch messages
     useEffect(() => {
-        if (!chat) {
+        if (! chat) {
             router.push(
-                `/${userId}/chats`
+                `/${ userId }/chats`
             )
             return;
         }
 
         const fetchMessages = async () => {
             try {
-                const messagesData = await apiFetch(`/user/${userId}/chats/${chat.id}/messages`, {},     router);
+                const messagesData = await apiFetch(`/user/${ userId }/chats/${ chat.id }/messages`, {}, router);
 
-                if (!messagesData) {
+                if (! messagesData) {
                     return null;
                 }
 
@@ -45,7 +48,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 setIsRead(myLatestMessage?.isRead ?? false);
 
                 try {
-                    await apiFetch(`/user/${userId}/chats/${chat.id}/messages/read`,
+                    await apiFetch(`/user/${ userId }/chats/${ chat.id }/messages/read`,
                         {
                             method: 'PATCH',
                         },
@@ -72,16 +75,16 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     useEffect(() => {
         if (isInitialLoad.current) {
-            bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+            bottomRef.current?.scrollIntoView({behavior: 'instant'});
             isInitialLoad.current = false;
         } else if (isAtBottom()) {
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            bottomRef.current?.scrollIntoView({behavior: 'smooth'});
         }
     }, [messages]);
 
     //Join chat
     useEffect(() => {
-        if (!chat) {
+        if (! chat) {
             return;
         }
 
@@ -103,7 +106,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             }
         };
 
-        const handleReadMessage = ({ userId: readerId }) => {
+        const handleReadMessage = ({userId: readerId}) => {
             if (Number(readerId) === Number(userId)) return;
 
             setIsRead(true);
@@ -111,7 +114,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
             setMessages(prev =>
                 prev.map(message =>
                     Number(message.user.id) === Number(userId)
-                    ? { ...message, isRead: true }
+                    ? {...message, isRead: true}
                     : message
                 )
             );
@@ -129,19 +132,19 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     //Handle typing
     useEffect(() => {
-        if (!chat) {
+        if (! chat) {
             return;
         }
 
         const socket = getSocket(localStorage.getItem('token'));
 
-        const handleTyping = ({ userId: typingUserId }) => {
+        const handleTyping = ({userId: typingUserId}) => {
             if (Number(typingUserId) === Number(userId)) return;
 
             setIsTyping(true);
         };
 
-        const handleStopTyping = ({ userId: typingUserId }) => {
+        const handleStopTyping = ({userId: typingUserId}) => {
             if (Number(typingUserId) === Number(userId)) return;
 
             setIsTyping(false);
@@ -158,7 +161,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     async function handleDelete() {
         try {
-            const response = await apiFetch( `/user/${userId}/chats/${chat.id}`,
+            const response = await apiFetch(`/user/${ userId }/chats/${ chat.id }`,
                 {
                     method: 'DELETE',
                 }, router
@@ -185,21 +188,20 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     const isAtBottom = () => {
         const el = bottomRef.current?.parentElement;
-        if (!el) return true;
+        if (! el) return true;
 
         return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
     };
 
-
     const loadMore = async () => {
-        if (!messages.length || loadingMore) return;
+        if (! messages.length || loadingMore) return;
 
         setLoadingMore(true);
 
         const oldest = messages[0];
 
         const data = await apiFetch(
-            `/user/${userId}/chats/${chat.id}/messages?beforeId=${oldest.id}`,
+            `/user/${ userId }/chats/${ chat.id }/messages?beforeId=${ oldest.id }`,
             {},
             router
         );
@@ -207,7 +209,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         if (data.length > 0) {
             setMessages(prev => {
                 const existingIds = new Set(prev.map(m => m.id));
-                const fresh = data.filter(m => !existingIds.has(m.id));
+                const fresh = data.filter(m => ! existingIds.has(m.id));
                 return [...fresh, ...prev];
             });
         }
@@ -215,41 +217,80 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         setLoadingMore(false);
     };
 
-    if (!chat) return null;
+    const handleOpenChatInfo = () => {
+        setIsChatInfoOpen(prev => ! prev);
+    }
+    console.log(isChatInfoOpen)
+    if (! chat) return null;
 
     return (
-        <div className="col-10 bg-light d-flex flex-column chat-column" style={{ paddingLeft: '10%', paddingRight: '10%', height: '100vh' }}>
-            <div className="messages-container" onScroll={handleScroll}>
-                {messages.map((message, index) => {
-                    const isLastMessage =
-                        Number(message.user.id) === Number(userId) &&
-                        messages.findLastIndex(m => Number(m.user.id) === Number(userId)) === index;
-                    return (
-                        <div key={message.id}>
-                            <Message setMessage={setMessages} user={message.user} authId={userId} message={message} />
-                            {isLastMessage && isRead && (
-                                <div className="text-end text-muted small">Seen</div>
-                            )}
-                        </div>
-                    );
-                })}
-                <div ref={bottomRef}></div>
-            </div>
-            <div className="row">
-                { willParticipate === null ? null : (
+        <div className="col-10 d-flex p-0" style={ {height: '100vh'} }>
+
+            <div
+                className="d-flex flex-column flex-grow-1"
+                style={ {minWidth: 0, paddingLeft: '1%', paddingRight: '1%'} }
+            >
+                <div className="row mw-100" id="chat-header">
+                    <div className="col text-dark mw-100 text-start" id="chat-title">
+                        <img src="" alt="i" id="chat-profile-picture"/>
+                        { receiver.username }
+                    </div>
+                    <div className="col text-muted mw-100 text-end" id="chat-title">
+                        <button onClick={ handleOpenChatInfo } id="more-button">
+                            <BsThreeDots/>
+                        </button>
+                    </div>
+                </div>
+                <hr/>
+                <div className="messages-container" onScroll={ handleScroll }>
+                    { messages.map((message, index) => {
+                        const isLastMessage =
+                            Number(message.user.id) === Number(userId) &&
+                            messages.findLastIndex(m => Number(m.user.id) === Number(userId)) === index;
+                        return (
+                            <div key={ message.id }>
+                                <Message
+                                    setMessage={ setMessages } user={ message.user } authId={ userId }
+                                    message={ message }
+                                />
+                                { isLastMessage && isRead && (
+                                    <div className="text-end text-muted small">Seen</div>
+                                ) }
+                            </div>
+                        );
+                    }) }
+                    <div ref={ bottomRef }></div>
+                </div>
+                <div className="row">
+                    { willParticipate === null ? null : (
                         willParticipate
-                            ? <div></div>
-                            : <button onClick={handleDelete}>User wants to chat, write message if you want to continue or delete this chat</button>
-                    )
-                }
-                {
-                    isTyping &&
-                    <div>Typing</div>
-                }
-                <div className="composer">
-                    <MessageInput userId={userId} chatId={chat.id} />
+                        ? <div></div>
+                        : <button onClick={ handleDelete }>User wants to chat, write message if you want to continue or
+                                                           delete this chat</button>
+                    ) }
+                    { isTyping && <div>Typing</div> }
+                    <div className="composer">
+                        <MessageInput userId={ userId } chatId={ chat.id }/>
+                    </div>
                 </div>
             </div>
+
+            { isChatInfoOpen && (
+                <div
+                    className="border-start"
+                    style={ {width: '24.999%', flexShrink: 0, height: '100vh', overflowY: 'auto'} }
+                >
+                    <div id="info-icon">
+                        <img src="" alt="icon"/>
+                        { receiver.username }
+                    </div>
+                    <hr/>
+                    <div>
+                        images
+                    </div>
+                </div>
+            ) }
+
         </div>
     )
 }

@@ -21,24 +21,37 @@ export default function SidebarListItem({onClick, chat, isSelected, onlineUsers}
 
     return (
         <div className="card border-1 m-1 shadow-lg" onClick={onClick}>
-            <div className={isSelected ? "bg-secondary-subtle" : ""} key={ chat.id }>
-                <div className="card-body bg-light d-flex align-items-center gap-2">
-                    <span>
-                        {receiver ? shortenUsername(receiver.username) : 'You'}
-                    </span>
-
+            <div className={isSelected ? "bg-secondary-subtle row m-1" : " row m-1" }>
+                <div style={{ position: 'relative', display: 'inline-block' }} className="col-2">
+                    <img
+                        src="user.png"
+                        className="rounded-circle"
+                        alt="user image"
+                        style={{ width: '50px', height: '50px' }}
+                    />
                     <span
-                        className={`p-1 rounded-circle ${
-                            isOnline ? "bg-success" : "bg-danger"
-                        }`}
-                        style={{ width: '10px', height: '10px', display: 'inline-block' }}
+                        className={`rounded-circle ${isOnline ? "bg-success" : "bg-danger"}`}
+                        style={{
+                            position: 'absolute',
+                            top: '0',
+                            right: '0',
+                            width: '13px',
+                            height: '13px',
+                            border: '2px solid white',
+                        }}
                     ></span>
                 </div>
-                <div className="card-body">
-                    { chat?.latestMessageBy === receiver.username ? shortenUsername(receiver.username) + ' :' : 'You :'}
-                    { shortenMessage(chat?.latestMessage) }
+                    <div className="col-10">
+                        <span style={{ fontWeight: 'initial' , marginTop: '1px' }}>
+                            {receiver ? shortenUsername(receiver.username) : 'You'}
+                        </span>
+                        <hr/>
+                        <span>
+                            { chat?.latestMessageBy === receiver.username ? shortenUsername(receiver.username) + ' :' : 'You :'}
+                            { shortenMessage(chat?.latestMessage) }
+                        </span>
+                    </div>
                 </div>
-            </div>
         </div>
     )
 }

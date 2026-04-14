@@ -64,7 +64,7 @@ export default function Message({user, authId, message, setMessage}) {
                 <div className={ isSender ? "message-sender-body" : "message-receiver-body" }>
                     { ! isSender && <div className="message-meta">{ message.user.username }</div> }
                     <div className="message-text">{ message.body }</div>
-                    <div>{formatTime(message)}</div>
+                    <div className="message-time">{formatTime(message)}</div>
                 </div>
             </div>
         </div>

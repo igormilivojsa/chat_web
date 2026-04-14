@@ -1,3 +1,13 @@
+main > *:last-child {
+  margin-bottom: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin-top: 0;
+}
+
 .sidebar-vh {
   height: 100vh;
   display: flex;
@@ -18,7 +28,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;            /* exact vertical spacing between messages */
+  gap: 5px;
   padding: 8px 0;
 }
 
@@ -53,18 +63,27 @@
 .message-sender-body {
   background: #3b82f6;
   color: white;
+  font-size: 18px;
   text-align: left; /* keeps multiline text aligned left inside bubble */
 }
 
 .message-receiver-body {
   background: #f1f2f4;
   color: #111;
+  font-size: 18px;
   text-align: left;
 }
 
 /* username inside bubble (small, not full-width) */
 .message-meta {
   font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+  display: block; /* it's inside bubble so block here is fine */
+}
+
+.message-time {
+  font-size: 16px;
   opacity: 0.75;
   margin-bottom: 6px;
   display: block; /* it's inside bubble so block here is fine */
@@ -104,4 +123,27 @@
   width: 40px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+#chat-header {
+  height: 50px;
+}
+
+#chat-title {
+  font-size: 19px;
+  font-weight: bolder;
+  margin: 10px;
+}
+
+#more-button {
+  background: #ffffff;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+}
+
+#info-icon {
+  height: 20px;
+  width: 20px;
+  margin: 150px auto 0 auto;
 }

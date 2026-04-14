@@ -117,6 +117,18 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
         router.push('/login')
     }
 
+    // const handleChatDelete = async (e) => {
+    //     e.preventDefault();
+    //     if (window.confirm('Are you sure you want to delete this chat?')) {
+    //         const deleteResponse = await apiFetch(`/user/${ user.id }/chats/${ chatId }`, {
+    //             method: 'DELETE',
+    //         }, null);
+    //
+    //         getTostify('success', 'Chat deleted successfully')
+    //         setChats(prev => prev.filter(c => c.id !== chat.id))
+    //     }
+    // }
+
     return (
         <div className="col-2 bg-light border-end sidebar-vh">
             {/*Logo*/}
