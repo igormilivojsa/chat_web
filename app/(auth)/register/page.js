@@ -73,36 +73,58 @@ export default function Register() {
         return <div>Loading...</div>
     }
     return (
-        <div className="container d-flex justify-content-center align-items-center vh-100">
-            <div className="w-50 card text-center">
-                <div className="card-header bg-white border-0">
-                    Register
-                </div>
-                <div className="card-body text-center">
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <label>
-                            Username
-                        </label>
-                        <input {...register("username")} type="text" className="form-control m-3 w-50 mx-auto"/>
-                        <label>
-                            Email
-                        </label>
-                        <input {...register("email")} type="email" className="form-control m-3 w-50 mx-auto"/>
-                        <label>
-                            Password
-                        </label>
-                        <input {...register("password")} type="password" className="form-control m-3 w-50 mx-auto"/>
+        <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+            <div className="card shadow-sm border-0 p-4" style={{ width: "420px", borderRadius: "16px" }}>
 
-                        <button className="m-3 w-50 mx-auto" type="submit">
-                            Submit
-                        </button>
-                    </form>
-                    <div className="mt-4 w-50 mx-auto">
-                        <GoogleLogin
-                            onSuccess={handleGoogleLogin}
-                            onError={() => getTostify('error', 'Google login failed')}
+                <div className="text-center mb-4">
+                    <h5 className="mb-0 fw-semibold">Register</h5>
+                    <small className="text-muted">Create your account</small>
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="mb-3">
+                        <label className="form-label">Username</label>
+                        <input
+                            {...register("username")}
+                            type="text"
+                            className="form-control rounded-3"
+                            placeholder="Username"
                         />
                     </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">Email</label>
+                        <input
+                            {...register("email")}
+                            type="email"
+                            className="form-control rounded-3"
+                            placeholder="Enter your email"
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">Password</label>
+                        <input
+                            {...register("password")}
+                            type="password"
+                            className="form-control rounded-3"
+                            placeholder="••••••••"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary w-100 rounded-3 py-2 fw-semibold"
+                    >
+                        Submit
+                    </button>
+                </form>
+
+                <div className="mt-4 d-flex justify-content-center">
+                    <GoogleLogin
+                        onSuccess={handleGoogleLogin}
+                        onError={() => getTostify('error', 'Google login failed')}
+                    />
                 </div>
             </div>
         </div>
