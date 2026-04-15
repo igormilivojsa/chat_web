@@ -6,11 +6,10 @@ import { getTostify } from '@/app/tostify'
 import { apiFetch } from '@/app/apiFetch'
 import { useEffect, useState } from 'react'
 
-export default function SidebarList({setSelectedChat, user, chats, setChats, selectedChat, onlineUsers}) {
+export default function SidebarList({setSelectedChat, auth, chats, setChats, selectedChat, onlineUsers}) {
     const router = useRouter();
-    const isOnline = user && onlineUsers.has(user.id.toString());
-    const params = useParams();
-    const userId = params.userId;
+    const isOnline = auth && onlineUsers.has(auth.id.toString());
+    const userId = auth?.id;
     const [ users, setUsers] = useState([]);
     const [ filteredUsers, setFilteredUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -57,7 +56,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
             setFilteredUsers([]);
         } else {
             try {
-                const newChat = await apiFetch(`/user/${userId}/chats`, {
+                const newChat = await apiFetch(`/user/me/chats`, {
                     method: 'POST',
                     body: JSON.stringify(data)
                 }, null)
@@ -86,7 +85,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
 
             socket.emit('join_chat', chatId);
 
-            const chat = await apiFetch(`/user/${userId}/chats/${chatId}`, {}, router);
+            const chat = await apiFetch(`/user/me/chats/${chatId}`, {}, router);
             if (!chat) return;
 
             setChats(prev => {
@@ -135,7 +134,7 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
                 ))}
 
                 {searchTerm.length < 2 && chats.map(chat => (
-                    <SidebarListItem onClick={ () => setSelectedChat(chat) } onlineUsers={onlineUsers} isSelected={chat.id === selectedChat?.id} key={ chat.id } chat={ chat }/>
+                    <SidebarListItem onClick={ () => setSelectedChat(chat) } onlineUsers={onlineUsers} isSelected={chat.id === selectedChat?.id} key={ chat.id } auth={auth} chat={ chat }/>
                 )) }
             </div>
 
@@ -150,26 +149,26 @@ export default function SidebarList({setSelectedChat, user, chats, setChats, sel
                     >
 
                         <div className="avatar-wrapper">
-                            {user.icon.length === 1 ? (
-                                <div className="avatar">{user.icon}</div>
+                            {auth.icon.length === 1 ? (
+                                <div className="avatar">{auth.icon}</div>
                             ) : (
-                                 <img className="avatar" src={user.icon} />
+                                 <img className="avatar" src={auth.icon} />
                              )}
 
                             <span className={`online-dot ${isOnline ? 'online' : 'offline'}`} />
                         </div>
 
-                        {user && <span>{user.username}</span>}
+                        {auth && <span>{auth.username}</span>}
                     </button>
 
                     <ul className="dropdown-menu">
                         <li>
-                            <Link className="dropdown-item" href={`/${userId}/profile`}>
+                            <Link className="dropdown-item" href={`/me/profile`}>
                                 Settings
                             </Link>
                         </li>
                         <li>
-                            <Link className="dropdown-item" onClick={handleLogout} href="#">
+                            <Link className="dropdown-item" onClick={handleLogout} href="/">
                                 Logout
                             </Link>
                         </li>

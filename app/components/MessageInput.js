@@ -31,7 +31,7 @@ export default function MessageInput({userId, chatId}) {
     const onSubmit = async(data) => {
         setLoader(true);
         try {
-            const newMessageData = await apiFetch(`/user/${userId}/chats/${chatId}/messages`, {
+            const newMessageData = await apiFetch(`/user/me/chats/${chatId}/messages`, {
                 method: 'POST',
                 body: JSON.stringify(data)
             }, null);

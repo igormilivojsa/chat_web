@@ -11,6 +11,13 @@ export default function Login() {
     const router = useRouter();
     const [ loader, setLoader] = useState(false);
 
+    const token = localStorage.getItem('token');
+    const refreshToken = localStorage.getItem('refresh_token');
+
+    if (token || refreshToken) {
+        router.replace('/me/chats')
+    }
+
     const onSubmit = async(data) => {
         try {
             setLoader(true);
@@ -35,7 +42,7 @@ export default function Login() {
 
             getTostify('success', 'Login successful');
 
-            router.push(`/${ result.user.id }/chats`)
+            router.push(`/me/chats`)
         } catch(error) {
             console.log(error)
         } finally {
@@ -64,7 +71,7 @@ export default function Login() {
             localStorage.setItem('token', result.token)
             localStorage.setItem('refresh_token', result.refresh_token)
             getTostify('success', 'Google login successful');
-            router.push(`/${result.user.id}/chats`);
+            router.push(`/me/chats`);
         } catch (error) {
             console.log(error)
         } finally {

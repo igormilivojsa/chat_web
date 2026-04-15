@@ -10,9 +10,8 @@ import { apiFetch } from '@/app/apiFetch'
 import { BsThreeDots } from 'react-icons/bs'
 import { TiDeleteOutline } from 'react-icons/ti'
 
-export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
-    const params = useParams();
-    const userId = params.userId;
+export function ChatWindow({chat, selectedChat, auth}) {
+    const userId = auth.id;
     const [messages, setMessages] = useState([]);
     const router = useRouter();
     const bottomRef = useRef(null);
@@ -21,21 +20,21 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const [isRead, setIsRead] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const isInitialLoad = useRef(false);
-    const receiver = selectedChat?.participant.find(participant => participant.id != userId);
+    const receiver = selectedChat?.participant.find(participant => Number(participant.id) !== Number(userId));
     const [isChatInfoOpen, setIsChatInfoOpen] = useState(false);
 
     //Fetch messages
     useEffect(() => {
         if (! chat) {
             router.push(
-                `/${ userId }/chats`
+                `/me/chats`
             )
             return;
         }
 
         const fetchMessages = async () => {
             try {
-                const messagesData = await apiFetch(`/user/${ userId }/chats/${ chat.id }/messages`, {}, router);
+                const messagesData = await apiFetch(`/user/me/chats/${ chat.id }/messages`, {}, router);
 
                 if (! messagesData) {
                     return null;
@@ -49,7 +48,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 setIsRead(myLatestMessage?.isRead ?? false);
 
                 try {
-                    await apiFetch(`/user/${ userId }/chats/${ chat.id }/messages/read`,
+                    await apiFetch(`/user/me/chats/${ chat.id }/messages/read`,
                         {
                             method: 'PATCH',
                         },
@@ -162,7 +161,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
 
     async function handleDelete() {
         try {
-            const response = await apiFetch(`/user/${ userId }/chats/${ chat.id }`,
+            const response = await apiFetch(`/user/me/chats/${ chat.id }`,
                 {
                     method: 'DELETE',
                 }, router
@@ -202,7 +201,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
         const oldest = messages[0];
 
         const data = await apiFetch(
-            `/user/${ userId }/chats/${ chat.id }/messages?beforeId=${ oldest.id }`,
+            `/user/me/chats/${ chat.id }/messages?beforeId=${ oldest.id }`,
             {},
             router
         );
@@ -221,7 +220,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
     const handleOpenChatInfo = () => {
         setIsChatInfoOpen(prev => ! prev);
     }
-    console.log(isChatInfoOpen)
+
     if (! chat) return null;
 
     return (
@@ -283,6 +282,7 @@ export function ChatWindow({setChats, chat, setSelectedChat, selectedChat}) {
                 </div>
             </div>
 
+            {/*new component chat info*/}
             { isChatInfoOpen && (
                 <div
                     className="border-start bg-white d-flex flex-column"

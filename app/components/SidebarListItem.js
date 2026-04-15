@@ -1,10 +1,8 @@
 import { useParams } from 'next/navigation'
 
 
-export default function SidebarListItem({onClick, chat, isSelected, onlineUsers}) {
-    const params = useParams();
-    const userId = params.userId;
-    const receiver = chat.participant.find(participant => participant.id != userId);
+export default function SidebarListItem({onClick, chat, auth, isSelected, onlineUsers}) {
+    const receiver = chat.participant.find(participant => participant.id != auth.id);
     const isOnline = onlineUsers.has(receiver.id.toString());
 
     function shortenMessage(message) {

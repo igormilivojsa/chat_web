@@ -9,7 +9,6 @@ import { getTostify } from '@/app/tostify'
 import { apiFetch } from '@/app/apiFetch'
 
 export default function Chats() {
-    const params = useParams();
     const router = useRouter()
     const [user, setUser] = useState(null)
     const [chats, setChats] = useState([])
@@ -22,11 +21,11 @@ export default function Chats() {
         const fetchData = async () => {
             try {
                 setLoader(true)
-                const userData = await apiFetch(`/user/${params.userId}`, {}, router)
+                const userData = await apiFetch(`/user/me`, {}, router)
 
                 setUser(userData);
 
-                const chatsData = await apiFetch(`/user/${ params.userId }/chats`, {}, router);
+                const chatsData = await apiFetch(`/user/me/chats`, {}, router);
 
                 setChats(chatsData)
             } catch (error) {
@@ -40,7 +39,7 @@ export default function Chats() {
         const socket = getSocket(localStorage.getItem('token'));
 
         const newChatHandler = async (data) => {
-            const chatResponse = await apiFetch(`/user/${ params.userId }/chats/${ data.chatId }`, {}, router);
+            const chatResponse = await apiFetch(`/user/me/chats/${ data.chatId }`, {}, router);
             setChats(prev => [...prev, chatResponse]);
         }
 
@@ -72,7 +71,7 @@ export default function Chats() {
             setOnlineUsers(new Set(data.userIds))
         }
 
-        const joinUser = () => socket.emit('join_user', params.userId)
+        const joinUser = () => socket.emit('join_user', user?.id)
 
         if (socket.connected) {
             joinUser()
@@ -95,7 +94,7 @@ export default function Chats() {
             socket.off('offline_user', handleOfflineUsers);
             socket.off('current_online_users', handleCurrentOnlineUsers)
         };
-    }, [params.userId, router])
+    }, [user?.id, router])
 
     if (loader) {
         return <div>Loading...</div>
@@ -103,8 +102,8 @@ export default function Chats() {
 
     return (
         <div className="d-flex row mw-100 vh-100">
-            <SidebarList setSelectedChat={setSelectedChat} onlineUsers={onlineUsers} selectedChat={selectedChat} user={user} chats={chats} setChats={setChats}  />
-            <ChatWindow setSelectedChat={setSelectedChat} setChats={setChats} chat={selectedChat} selectedChat={selectedChat}/>
+            <SidebarList setSelectedChat={setSelectedChat} onlineUsers={onlineUsers} selectedChat={selectedChat} auth={user} chats={chats} setChats={setChats}  />
+            <ChatWindow setSelectedChat={setSelectedChat} setChats={setChats} chat={selectedChat} auth={user} selectedChat={selectedChat}/>
         </div>
     )
 }

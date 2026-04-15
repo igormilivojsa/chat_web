@@ -6,8 +6,6 @@ import { getTostify } from '@/app/tostify'
 import { apiFetch } from '@/app/apiFetch'
 
 export default function Settings() {
-    const params = useParams();
-    const userId = params.userId;
     const router = useRouter();
     const [user, setUser] = useState();
     const [ loader, setLoader] = useState(false);
@@ -24,7 +22,7 @@ export default function Settings() {
         const fetchUser = async () => {
             try {
                 setLoader(true)
-                const userData = await apiFetch(`/user/${ userId }`, {method: 'GET'}, router);
+                const userData = await apiFetch(`/user/me`, {method: 'GET'}, router);
 
                 setUser(userData);
             } catch (error) {
@@ -52,13 +50,13 @@ export default function Settings() {
             if (data.icon[0] instanceof File && data.icon[0].size > 0) {
                 const formData = new FormData();
                 formData.append('icon', data.icon[0]);
-                await apiFetch(`/user/${userId}/avatar`, {
+                await apiFetch(`/user/me/avatar`, {
                     'method': 'PATCH',
                     body: formData
                 }, router);
             }
 
-            const updateUserData = await apiFetch(`/user/${userId}`, {
+            const updateUserData = await apiFetch(`/user/me`, {
                 method: 'PATCH',
                 body: JSON.stringify({ username: data.username, password: data.password }),
             }, router);
@@ -71,7 +69,7 @@ export default function Settings() {
 
             getTostify('success', 'Profile updated successfully')
 
-            router.push(`/${userId}/chats`);
+            router.push(`/me/chats`);
         } catch (error) {
             getTostify('error', error.message)
         }

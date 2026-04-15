@@ -36,7 +36,7 @@ export default function Register() {
             setLoader(false);
             getTostify('success', 'Registration successful');
 
-            router.push(`/${result.user.id}/chats`)
+            router.push(`/me/chats`)
         } catch (error) {
             console.log(error.message, 'error')
         } finally {
@@ -61,7 +61,7 @@ export default function Register() {
             localStorage.setItem('token', result.token)
             localStorage.setItem('refresh_token', result.refresh_token)
             getTostify('success', 'Google login successful');
-            router.push(`/${result.user.id}/chats`);
+            router.push(`/me/chats`);
         } catch (error) {
             console.log(error)
         } finally {
