@@ -59,6 +59,12 @@ html, body {
   box-shadow: 0 1px 0 rgba(0,0,0,0.03);
 }
 
+.message-sender-body,
+.message-receiver-body {
+  position: relative;
+  overflow: hidden;
+}
+
 /* different colors for sender/receiver */
 .message-sender-body {
   background: #3b82f6;
@@ -275,4 +281,51 @@ html, body {
 
 .chat-info-online-dot.offline {
   background: #adb5bd;
+}
+
+.hold-fill {
+  height: 3px;
+  width: 100%;
+  background: rgba(255,255,255,0.1);
+  overflow: hidden;
+}
+
+.hold-fill-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  background: #4ade80;
+  transition: transform 1s linear;
+}
+
+.message-sender-body.holding {
+  filter: brightness(0.85);
+  transition: filter 0.05s linear;
+}
+
+.message-receiver-body.holding {
+  filter: brightness(0.92);
+  transition: filter 0.05s linear;
+}
+
+.message-sender-body::after,
+.message-receiver-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background: rgba(0, 0, 0, 0.25);
+  opacity: 0;
+
+  transform: scale(0.3);
+  border-radius: inherit;
+
+  transition: transform 0.05s linear, opacity 0.05s linear;
+}
+
+.message-sender-body.holding::after,
+.message-receiver-body.holding::after {
+  opacity: var(--hold);
+  transform: scale(calc(0.3 + (var(--hold) * 0.7)));
 }
