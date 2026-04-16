@@ -126,7 +126,9 @@ export function ChatWindow({chat, selectedChat, auth}) {
         return () => {
             socket.off('message_read', handleReadMessage);
             socket.off("new_message", handleNewMessage);
-            socket.emit("leave_chat", chat.id);
+            socket.on('leave_chat', (chatId) => {
+                socket.leave(`chat_${chatId}`);
+            });
         }
     }, [chat?.id])
 

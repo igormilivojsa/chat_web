@@ -46,6 +46,36 @@ export default function SidebarList({setSelectedChat, auth, chats, setChats, sel
         return () => clearTimeout(timeout);
     }, [searchTerm, users]);
 
+    useEffect(() => {
+        const socket = getSocket(localStorage.getItem('token'));
+
+        const handleChatUpdated = ({chatId, latestMessage, latestMessageBy}) => {
+            setChats(prevChats => {
+                const updatedChats = prevChats.map(chat => {
+                    if (chat.id === chatId) {
+                        return {
+                            ...chat,
+                            latestMessage: latestMessage,
+                            latestMessageBy: latestMessageBy,
+                        };
+                    }
+                    return chat;
+                });
+
+                const updatedChat = updatedChats.find(chat => chat.id === chatId);
+                const others = updatedChats.filter(chat => chat.id !== chatId);
+
+                return [updatedChat, ...others];
+            })
+        }
+
+        socket.on('chat_updated', handleChatUpdated)
+
+        return () => {
+            socket.off('chat_updated', handleChatUpdated);
+        }
+    }, [setChats])
+
     const onSubmit = async(data) => {
         const existingChat = chats.find(chat =>
             chat.participant.some(p => p.id === data.id)

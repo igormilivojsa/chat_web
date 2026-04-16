@@ -1,5 +1,5 @@
-import { useParams } from 'next/navigation'
-
+import { getSocket } from '@/app/socket'
+import { useEffect } from 'react'
 
 export default function SidebarListItem({onClick, chat, auth, isSelected, onlineUsers}) {
     const receiver = chat.participant.find(participant => participant.id != auth.id);

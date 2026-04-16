@@ -9,14 +9,18 @@ import { apiFetch } from '@/app/apiFetch'
 export default function Login() {
     const {register, handleSubmit} = useForm();
     const router = useRouter();
-    const [ loader, setLoader] = useState(false);
+    const [ loader, setLoader] = useState(true);
 
-    const token = localStorage.getItem('token');
-    const refreshToken = localStorage.getItem('refresh_token');
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const refreshToken = localStorage.getItem('refresh_token');
 
-    if (token || refreshToken) {
-        router.replace('/me/chats')
-    }
+        if (token || refreshToken) {
+            router.replace('/me/chats')
+        } else {
+            setLoader(false);
+        }
+    }, [router])
 
     const onSubmit = async(data) => {
         try {

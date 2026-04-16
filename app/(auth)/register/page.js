@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { getTostify } from '@/app/tostify'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiFetch } from '@/app/apiFetch'
 import { GoogleLogin } from '@react-oauth/google'
 
@@ -11,6 +11,17 @@ export default function Register() {
     const {register, handleSubmit} = useForm();
     const router = useRouter();
     const [loader, setLoader] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        if (token || refreshToken) {
+            router.replace('/me/chats')
+        } else {
+            setLoader(false);
+        }
+    }, [router])
 
     const onSubmit = async(data) => {
         try {
