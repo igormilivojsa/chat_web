@@ -10,7 +10,7 @@ export default function Message({user, authId, message, setMessage}) {
     const intervalRef = useRef(null);
 
     useEffect(() => {
-        const socket = getSocket(localStorage.getItem('token'));
+        const socket = getSocket();
 
         const messageDeleteHandler = (data) => {
             setMessage(prev => prev.filter(m => m.id !== data.messageId))

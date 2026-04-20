@@ -88,7 +88,7 @@ export function ChatWindow({chat, selectedChat, auth}) {
             return;
         }
 
-        const socket = getSocket(localStorage.getItem('token'));
+        const socket = getSocket();
 
         socket.emit('join_chat', chat.id)
 
@@ -138,7 +138,7 @@ export function ChatWindow({chat, selectedChat, auth}) {
             return;
         }
 
-        const socket = getSocket(localStorage.getItem('token'));
+        const socket = getSocket();
 
         const handleTyping = ({userId: typingUserId}) => {
             if (Number(typingUserId) === Number(userId)) return;

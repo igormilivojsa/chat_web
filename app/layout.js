@@ -8,7 +8,7 @@ export default function RootLayout({ children }) {
     return (
         <html lang="en">
             <body>
-                <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+                <GoogleOAuthProvider clientId={process.env.GOOGLE_CLIENT_ID}>
                     <BootstrapClient />
                     { children }
                     <ToastContainer

@@ -2,10 +2,10 @@ import { io } from 'socket.io-client'
 
 let socket;
 
-export const getSocket = (token) => {
+export const getSocket = () => {
     if (!socket || socket.disconnected) {
         socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-            auth: { token }
+            withCredentials: true
         });
 
         socket.on("connect", () => {
@@ -20,6 +20,4 @@ export const getSocket = (token) => {
     return socket;
 }
 
-export const resetSocket = () => {
-    socket = null;
-}
+const resetSocket = () => socket = null;

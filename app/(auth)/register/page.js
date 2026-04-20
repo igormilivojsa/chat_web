@@ -12,22 +12,12 @@ export default function Register() {
     const router = useRouter();
     const [loader, setLoader] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        const refreshToken = localStorage.getItem('refresh_token');
-
-        if (token || refreshToken) {
-            router.replace('/me/chats')
-        } else {
-            setLoader(false);
-        }
-    }, [router])
-
     const onSubmit = async(data) => {
         try {
             setLoader(true);
             const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/register', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-type': 'application/json',
                 },
@@ -42,9 +32,9 @@ export default function Register() {
 
             const result = await response.json();
 
-            localStorage.setItem('token', result.token)
 
             setLoader(false);
+            localStorage.setItem('refresh_token', result.refresh_token);
             getTostify('success', 'Registration successful');
 
             router.push(`/me/chats`)
@@ -69,9 +59,9 @@ export default function Register() {
                 }),
             }, router)
 
-            localStorage.setItem('token', result.token)
-            localStorage.setItem('refresh_token', result.refresh_token)
             getTostify('success', 'Google login successful');
+            localStorage.setItem('refresh_token', result.refresh_token);
+
             router.push(`/me/chats`);
         } catch (error) {
             console.log(error)

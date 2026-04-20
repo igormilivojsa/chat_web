@@ -9,24 +9,14 @@ import { apiFetch } from '@/app/apiFetch'
 export default function Login() {
     const {register, handleSubmit} = useForm();
     const router = useRouter();
-    const [ loader, setLoader] = useState(true);
-
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        const refreshToken = localStorage.getItem('refresh_token');
-
-        if (token || refreshToken) {
-            router.replace('/me/chats')
-        } else {
-            setLoader(false);
-        }
-    }, [router])
+    const [ loader, setLoader] = useState(false);
 
     const onSubmit = async(data) => {
         try {
             setLoader(true);
             const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/login_check', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-type': 'application/json',
                 },
@@ -41,7 +31,6 @@ export default function Login() {
 
             const result = await response.json();
 
-            localStorage.setItem('token', result.token)
             localStorage.setItem('refresh_token', result.refresh_token)
 
             getTostify('success', 'Login successful');
@@ -60,6 +49,7 @@ export default function Login() {
 
             const result = await apiFetch('/login/google', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-type': 'application/json',
                 },
@@ -72,7 +62,7 @@ export default function Login() {
                 getTostify('error', 'Google login failed');
                 return;
             }
-            localStorage.setItem('token', result.token)
+
             localStorage.setItem('refresh_token', result.refresh_token)
             getTostify('success', 'Google login successful');
             router.push(`/me/chats`);

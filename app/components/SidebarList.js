@@ -1,7 +1,7 @@
 import SidebarListItem from '@/app/components/SidebarListItem'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getSocket, resetSocket } from '@/app/socket'
+import { getSocket } from '@/app/socket'
 import { getTostify } from '@/app/tostify'
 import { apiFetch } from '@/app/apiFetch'
 import { useEffect, useState } from 'react'
@@ -47,7 +47,7 @@ export default function SidebarList({setSelectedChat, auth, chats, setChats, sel
     }, [searchTerm, users]);
 
     useEffect(() => {
-        const socket = getSocket(localStorage.getItem('token'));
+        const socket = getSocket();
 
         const handleChatUpdated = ({chatId, latestMessage, latestMessageBy}) => {
             setChats(prevChats => {
@@ -108,7 +108,7 @@ export default function SidebarList({setSelectedChat, auth, chats, setChats, sel
     }
 
     useEffect(() => {
-        const socket = getSocket(localStorage.getItem('token'));
+        const socket = getSocket();
 
         socket.on('new_chat', async (data) => {
             const { chatId } = data;
@@ -129,21 +129,18 @@ export default function SidebarList({setSelectedChat, auth, chats, setChats, sel
         };
     }, [userId]);
 
-    function handleLogout() {
-        const socket = getSocket(localStorage.getItem('token'))
+    async function handleLogout() {
+        await apiFetch('/logout', { method: 'POST' }, router);
 
-        socket.disconnect();
-        resetSocket();
-
-        localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
+
+        const socket = getSocket();
+        socket.disconnect();
 
         setChats([]);
         setSelectedChat(null);
 
-        getTostify('success', 'Logged out successfully')
-
-        router.push('/login')
+        router.push('/login');
     }
 
     return (

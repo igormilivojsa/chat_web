@@ -2,35 +2,32 @@ import { getTostify } from '@/app/tostify'
 
 const refresh = async () => {
     const refreshToken = localStorage.getItem('refresh_token');
-    if (! refreshToken) return null;
+    if (!refreshToken) return false;
 
-    const refreshResponse = await fetch(process.env.NEXT_PUBLIC_API_URL + `/token/refresh`, {
+    const response = await fetch(process.env.NEXT_PUBLIC_API_URL + `/token/refresh`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `refresh_token=${refreshToken}`,
     });
 
-    if (! refreshResponse.ok) {
-        getTostify('error', 'Session expired, please login again')
-        return null;
+    if (!response.ok) return false;
+
+    const data = await response.json();
+    if (data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token);
     }
 
-    const { token: newToken , refresh_token: newRefreshToken } = await refreshResponse.json();
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('refresh_token', newRefreshToken);
-    return newToken;
-}
+    return true;
+};
 
 export const apiFetch = async (url, options = {}, router = null) => {
-    const token = localStorage.getItem('token');
     const isFormData = options.body instanceof FormData;
 
     const response = await fetch(process.env.NEXT_PUBLIC_API_URL + url, {
         ...options,
+        credentials: 'include',
         headers: {
-                Authorization: `Bearer ${token}`,
             ...(!isFormData && { 'Content-Type': 'application/json' }),
             ...options.headers
         }
@@ -49,8 +46,8 @@ export const apiFetch = async (url, options = {}, router = null) => {
 
     const retryData = await fetch(process.env.NEXT_PUBLIC_API_URL + url, {
         ...options,
+        credentials: 'include',
         headers: {
-            Authorization: `Bearer ${newToken}`,
             ...(!isFormData && { 'Content-Type': 'application/json' }),
             ...options.headers
         }

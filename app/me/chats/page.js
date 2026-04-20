@@ -36,7 +36,7 @@ export default function Chats() {
         }
         fetchData();
 
-        const socket = getSocket(localStorage.getItem('token'));
+        const socket = getSocket();
 
         const newChatHandler = async (data) => {
             const chatResponse = await apiFetch(`/user/me/chats/${ data.chatId }`, {}, router);

@@ -16,7 +16,7 @@ export default function MessageInput({userId, chatId}) {
 
     const bodyValue = watch('body');
 
-    const socket = getSocket(localStorage.getItem('token'));
+    const socket = getSocket();
 
     useEffect(() => {
         if (!socket) return;
